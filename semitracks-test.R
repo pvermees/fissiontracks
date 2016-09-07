@@ -5,15 +5,15 @@ source('semitracks.R')
 example <- 1
 
 if (example==1){
-    fname <- 'data/fct_c_semi.csv'
+    fname <- 'track-lengths/fct_c_semi.csv'
     confined <- FALSE
     skip <- 0
 } else if (example==2){
-    fname <- 'data/UM10-10 Brogo 3D Semi Tracks with Dper.csv'
+    fname <- 'track-lengths/UM10-10 Brogo 3D Semi Tracks with Dper.csv'
     confined <- FALSE
     skip <- 2
 } else if (example==3){
-    fname <- 'data/UM10-10 Brogo 3D Confined Lengths.csv'
+    fname <- 'track-lengths/UM10-10 Brogo 3D Confined Lengths.csv'
     confined <- TRUE
     skip <- 2
 }
