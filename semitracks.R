@@ -65,16 +65,6 @@ invert.old <- function(l,confined=FALSE,ncomp=5){
     P <- p2P(fit$par)
     list(l=l,P=P,M=M,S=S)
 }
-invert.fixed.S <- function(l,confined=FALSE,ncomp=3,mM=4,MM=16){
-    s <- S2s((MM-mM)/(5*ncomp))
-    pms <- rep(0,2*ncomp-1) # initialise with equal logratios
-    if (confined) fit <- optim(pms,cmisfit.fixed.S,l=l,s=s)
-    else fit <- optim(pms,smisfit.fixed.S,l=l,s=s,mM=mM,MM=MM)
-    P <- p2P(fit$par[1:(ncomp-1)])
-    M <- m2M(fit$par[ncomp:(2*ncomp-1)])
-    S <- s2S(s)
-    list(l=l,P=P,M=M,S=S)
-}
 
 # maximum (negative) likelihood misfit function for confined tracks
 cmisfit <- function(pms,l,mM=4,MM=16){
@@ -91,16 +81,6 @@ cmisfit <- function(pms,l,mM=4,MM=16){
 cmisfit.old <- function(p,M,S,l){
     P <- p2P(p)
     fcL <- unlist(lapply(l,getfcL.old,P=P,M=M,S=S))
-    -sum(log(fcL))
-}
-cmisfit.fixed.S <- function(pm,l,s,mM=4,MM=16){
-    ncomp <- (length(pm)+1)/2
-    p <- pm[1:(ncomp-1)]
-    P <- p2P(p)
-    m <- pm[ncomp:(2*ncomp-1)]
-    M <- m2M(m,mM,MM)
-    S <- s2S(s)
-    fcL <- unlist(lapply(l,getfcL,P=P,M=M,S=S))
     -sum(log(fcL))
 }
 
@@ -127,22 +107,6 @@ smisfit.old <- function(p,M,S,l){
     fsL <- unlist(lapply(l,getfsL.old,P=P,M=M,S=S))
     cutoff <- min(l)
     fsL.of.uncounted <- getfsL.old(cutoff,P=P,M=M,S=S)
-    dl <- 2
-    num.of.short.tracks <- sum(l>=cutoff & l<(cutoff+dl))
-    num.uncounted <- num.of.short.tracks*cutoff/dl
-    corr.term <- num.uncounted*log(fsL.of.uncounted)
-    -(sum(log(fsL))+corr.term)
-}
-smisfit.fixed.S <- function(pm,l,s,mM=4,MM=16){
-    ncomp <- (length(pm)+1)/2
-    p <- pm[1:(ncomp-1)]
-    P <- p2P(p)
-    m <- pm[ncomp:(2*ncomp-1)]
-    M <- m2M(m,mM,MM)
-    S <- s2S(s)
-    fsL <- unlist(lapply(l,getfsL,P=P,M=M,S=S))
-    cutoff <- min(l)
-    fsL.of.uncounted <- getfsL(cutoff,P=P,M=M,S=S)
     dl <- 2
     num.of.short.tracks <- sum(l>=cutoff & l<(cutoff+dl))
     num.uncounted <- num.of.short.tracks*cutoff/dl
