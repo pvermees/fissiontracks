@@ -2,7 +2,7 @@ rm(list=ls())
 graphics.off()
 source('semitracks.R')
 
-example <- 1
+example <- 3
 
 if (example==1){
     fname <- 'track-lengths/fct_c_semi.csv'
@@ -21,6 +21,8 @@ if (example==1){
 # open the data file
 dat <- read.data(fname,confined=confined,cutoff=3,skip=skip)
 
-fit <- invert(dat$l,confined=confined,ncomp=5)
-x <- forward(fit$P,fit$M,fit$S)
-plotModel(x,dat)
+fit <- invert(dat$l,confined=confined,ncomp=3)
+
+mod <- forward(fit$P,fit$M,fit$S)
+
+plotModel(mod,dat)
