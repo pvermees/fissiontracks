@@ -1,9 +1,11 @@
 rm(list=ls())
 
 library('jpeg')
+library('sp')
 
 # ij = c(grain number, image number)
-load.grain <- function(dl,ij=c(1,1),mica=FALSE,json=NULL,new=FALSE){
+load.grain <- function(dl,ij=c(1,1),mica=FALSE,json=NULL,new=FALSE,
+                       lab='Melbourne'){
     if (!new){
         par(mar=c(1,1,1,1),xpd=NA,new=new)
         plot(c(0,1),c(0,1),type='n',axes=FALSE,xlab='',ylab='')
@@ -21,15 +23,25 @@ load.grain <- function(dl,ij=c(1,1),mica=FALSE,json=NULL,new=FALSE){
     i <- ij[1] # grain number
     j <- ij[2] # image number
     roi <- json$rois[[i]]
+    #print(Polygon(cbind(c(roi$x,roi$x[1]),c(roi$y,roi$y[1])),hole=F)@area)
     spots <- json$tracks[[i]]
     ng <- length(dl) # number of grains
     if (i<1) i <- 1
     if (i>ng) i <- ng
-    if (mica) fl <- list.files(dl[i],pattern="^MicaStack-")
-    else fl <- list.files(dl[i],pattern="^Stack-")
-    fl <- fl[sort.fl(fl,mica)]
-    if (mica) fl <- c("MicaReflStackFlat.jpeg",fl)
-    else fl <- c("ReflStackFlat.jpeg",fl)
+    if (identical(lab,'Melbourne')){
+        if (mica) fl <- list.files(dl[i],pattern="^MicaStack-")
+        else fl <- list.files(dl[i],pattern="^Stack-")
+        fl <- fl[sort.fl(fl,mica)]
+        if (mica) fl <- c("MicaReflStackFlat.jpeg",fl)
+        else fl <- c("ReflStackFlat.jpeg",fl)
+    } else if (identical(lab,'Gent')){
+        if (mica){
+            fl <- list.files(dl[i],pattern="m12")
+        } else {
+            fl <- list.files(dl[i],pattern="dia")
+            fl <- c(list.files(dl[i],pattern="epi"),fl)
+        }
+    }
     ni <- length(fl) # number of images
     if (j<1) j <- 1
     if (j>ni) j <- ni
@@ -121,11 +133,11 @@ dodelete <- function(xy){
     (xy$x<=0.5) & (xy$x>0) & (xy$y<0)
 }
 
-geochron.at.home <- function(dir){
+geochron.at.home <- function(dir,lab='Melbourne'){
     mica <- FALSE
     dl <- list.dirs(dir,recursive=FALSE) # directory list
     json <- init.json(dl)
-    ij <- load.grain(dl,mica=mica,json=json,new=FALSE)
+    ij <- load.grain(dl,mica=mica,json=json,new=FALSE,lab=lab)
     while(TRUE){
         message("Choose one of the following options:\n",
                 "b - browse the images\n",
@@ -141,26 +153,27 @@ geochron.at.home <- function(dir){
                 xy <- locator(1)
                 if (dodown(xy)){
                     ij[2] <- ij[2]+1
-                    ij <- load.grain(dl,ij,mica,json,new=TRUE)
+                    ij <- load.grain(dl,ij,mica,json,new=TRUE,lab=lab)
                 } else if (doup(xy)){
                     ij[2] <- ij[2]-1
-                    ij <- load.grain(dl,ij,mica,json,new=TRUE)
+                    ij <- load.grain(dl,ij,mica,json,new=TRUE,lab=lab)
                 } else if (doprev(xy) & ij[1]>1){
                     if (!identical(response,'b'))
                         save.to.json(dl[ij[1]],ij[3],ij[4],
                                      json$rois[[ij[1]]],
                                      json$tracks[[ij[1]]])
                     ij[1:2] <- c(ij[1]-1,1)
-                    ij <- load.grain(dl,ij,mica,json,new=FALSE)
+                    ij <- load.grain(dl,ij,mica,json,new=FALSE,lab=lab)
                 } else if (donext(xy) & ij[1]<length(json$rois)){
                     if (!identical(response,'b'))
                         save.to.json(dl[ij[1]],ij[3],ij[4],
                                      json$rois[[ij[1]]],
                                      json$tracks[[ij[1]]])
                     ij[1:2] <- c(ij[1]+1,1)
-                    ij <- load.grain(dl,ij,mica,json,new=FALSE)
+                    ij <- load.grain(dl,ij,mica,json,new=FALSE,lab=lab)
                 } else if (donew(xy)){
-                    # TODO
+                    #nrois <- length(json$rois)
+                    #jsron$rois[[nrois+1]] <- list(x=NULL,y=NULL)
                 } else if (doexit(xy)){
                     if (!identical(response,'b'))
                         save.to.json(dl[ij[1]],ij[3],ij[4],
@@ -178,7 +191,7 @@ geochron.at.home <- function(dir){
                         roi$y <- roi$y[1:(nc-1)]
                     }
                     json$rois[[ij[1]]] <- roi
-                    load.grain(dl,ij,mica,json,new=TRUE)
+                    load.grain(dl,ij,mica,json,new=TRUE,lab=lab)
                 } else if (dodelete(xy) & identical(response,'c')){
                     tracks <- json$tracks[[ij[1]]]
                     nt <- length(tracks$x)
@@ -190,23 +203,23 @@ geochron.at.home <- function(dir){
                         tracks$y <- tracks$y[1:(nt-1)]
                     }
                     json$tracks[[ij[1]]] <- tracks
-                    load.grain(dl,ij,mica,json,new=TRUE)
+                    load.grain(dl,ij,mica,json,new=TRUE,lab=lab)
                 } else if (domica(xy)){
                     mica <- TRUE
                     ij[2] <- 1
-                    load.grain(dl,ij,mica,json,new=FALSE)
+                    load.grain(dl,ij,mica,json,new=FALSE,lab=lab)
                 } else if (dograin(xy)){
                     mica <- FALSE
                     ij[2] <- 1
-                    load.grain(dl,ij,mica,json,new=FALSE)            
+                    load.grain(dl,ij,mica,json,new=FALSE,lab=lab)
                 } else if (identical(response,'r')) {
                     json$rois[[ij[1]]]$x <- c(json$rois[[ij[1]]]$x,xy$x)
                     json$rois[[ij[1]]]$y <- c(json$rois[[ij[1]]]$y,1-xy$y)
-                    load.grain(dl,ij,mica,json,new=TRUE)
+                    load.grain(dl,ij,mica,json,new=TRUE,lab=lab)
                 } else if (identical(response,'c')) {
                     json$tracks[[ij[1]]]$x <- c(json$tracks[[ij[1]]]$x,xy$x)
                     json$tracks[[ij[1]]]$y <- c(json$tracks[[ij[1]]]$y,1-xy$y)
-                    load.grain(dl,ij,mica,json,new=TRUE)
+                    load.grain(dl,ij,mica,json,new=TRUE,lab=lab)
                 }
             }
         } else if (identical(response,'x')){
@@ -294,13 +307,30 @@ print.json <- function(roi,tracks,w,h,dx,dy){
     print(out)
 }
 
+prepareGentFiles <- function(dir,ngrains){
+    files <- list.files(dir)
+    ndig <- nchar(ngrains)
+    for (i in 1:ngrains){
+        gnum <- paste0(rep(0,ndig-nchar(i)),i)
+        gname <- paste0('xy',gnum)
+        sfiles <- files[grepl(pattern=gname,files)]
+        system(paste0('mkdir ',dir,'Grain',gnum))
+        cat(paste0('{"image_width":1608,"image_height":1608,',
+                   '"regions":[{"vertices":[],"shift":[]}]}'),
+            file=paste0(dir,'Grain',gnum,'/rois.json'))
+        for (file in sfiles){
+            system(paste0('mv ',dir,file,' ',dir,'Grain',gnum))
+        }
+    }
+}
+
+#prepareGentFiles('/home/pvermees/Desktop/GaH/FCT-G1/',62)
+
 #geochron.at.home("LU324-2-DUR")
 #geochron.at.home("LU324-6-FCT")
-
-geochron.at.home("/home/pvermees/Documents/fissiontracks/geochron@home/images/LU324-2-DUR")
+#geochron.at.home("/home/pvermees/Documents/fissiontracks/geochron@home/images/LU324-2-DUR")
 #geochron.at.home("/home/pvermees/Documents/geochron@home/LU324-10-MD")
 #geochron.at.home("/home/pvermees/Documents/geochron@home/LU288-2-GIL")
-#geochron.at.home("/home/pvermees/Documents/fissiontracks/geochron@home/images/Qingyang-7X")
+#geochron.at.home("/home/pvermees/Documents/fissiontracks/geochron@home/images/Qingyang-1X")
 
-#geochron.at.home("/home/pvermees/Desktop/geochron@home/newimages/1X")
-
+geochron.at.home("/home/pvermees/Desktop/GaH/FCT-G1",lab='Gent')
