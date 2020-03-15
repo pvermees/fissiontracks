@@ -47,10 +47,13 @@ simulate <- function(fm,n=1000,confined=FALSE){
 # ncomp: the number of Normal components to fit
 invert <- function(l,confined=FALSE,ncomp=2,mM=4,MM=16,dM=2){
     pms <- rep(0,2*ncomp) # initialise with equal logratios
-    if (confined) fit <- optim(pms,cmisfit,l=l,hessian=TRUE)
-    else fit <- optim(pms,smisfit,l=l,mM=mM,MM=MM,dM=dM,hessian=TRUE)
-    err <- sqrt(diag(solve(fit$hessian)))
-    P <- p2P(fit$par[1:(ncomp-1)])
+    if (confined) fit <- optim(pms,cmisfit,l=l)
+    else fit <- optim(pms,smisfit,l=l,mM=mM,MM=MM,dM=dM)
+    if (ncomp==1){
+        P <- 1
+    } else {
+        P <- p2P(fit$par[1:(ncomp-1)])
+    }
     M <- m2M(fit$par[ncomp:(2*ncomp-1)])
     S <- s2S(fit$par[2*ncomp])
     list(l=l,P=P,M=M,S=S)
@@ -59,8 +62,12 @@ invert <- function(l,confined=FALSE,ncomp=2,mM=4,MM=16,dM=2){
 # maximum (negative) likelihood misfit function for confined tracks
 cmisfit <- function(pms,l,mM=4,MM=16){
     ncomp <- length(pms)/2
-    p <- pms[1:(ncomp-1)]
-    P <- p2P(p)
+    if (ncomp==1){
+        P <- 1
+    } else {
+        p <- pms[1:(ncomp-1)]
+        P <- p2P(p)
+    }
     m <- pms[ncomp:(2*ncomp-1)]
     M <- m2M(m,mM,MM)
     s <- pms[2*ncomp]
@@ -81,8 +88,12 @@ cmisfit <- function(pms,l,mM=4,MM=16){
 # ------mM-----mM+dM-------MM---------> l
 smisfit <- function(pms,l,mM=4,MM=16,dM=2){
     ncomp <- length(pms)/2
-    p <- pms[1:(ncomp-1)]
-    P <- p2P(p)
+    if (ncomp==1){
+        P <- 1
+    } else {
+        p <- pms[1:(ncomp-1)]
+        P <- p2P(p)
+    }
     m <- pms[ncomp:(2*ncomp-1)]
     M <- m2M(m,mM,MM)
     s <- pms[2*ncomp]

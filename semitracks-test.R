@@ -21,7 +21,7 @@ if (example==1){
     skip <- 2
     cols <- c(5,9)
 } else if (example==4){
-    fname <- '~/Dropbox/Programming/R/semistijn.csv'
+    fname <- '~/Desktop/Length_data_semi.csv'
     confined <- FALSE
     skip <- 5
     cols <- c(6,9)
@@ -31,7 +31,7 @@ dat <- read.data(fname,confined=confined,skip=skip,cols=cols)
 
 option <- 2
 
-if (option==1) { # semitracks.R
+if (option==1) {
     P <- c(0.3,0.7)
     M <- c(8,13)
     S <- 1
@@ -39,8 +39,8 @@ if (option==1) { # semitracks.R
     plotModel(fm)
     l <- simulate(fm,n=1000,confined=FALSE)
     fit <- invert(l,confined=FALSE,ncomp=2)
-} else if (option==2){ # semitracks2.R
-    fit <- invert(dat$l,confined=confined,ncomp=2)
+} else if (option==2){
+    fit <- invert(dat$l,confined=confined,ncomp=1)
     fm <- forward(fit$P,fit$M,fit$S)
     plotModel(fm,dat)
 } else if (option==3){ # plot fs against l for different phi
