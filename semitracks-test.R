@@ -29,9 +29,32 @@ if (example==1){
 
 dat <- read.data(fname,confined=confined,skip=skip,cols=cols)
 
-option <- 10
+option <- 12
 
-if (option==10){
+if (option==12){
+    m <- forward(P=c(0.5,0.5),M=c(8,12),S=1,mM=5,MM=16)
+    par(mfrow=c(2,2))
+    plot(m$l,m$fs,type='l')
+    plot(m$l,m$fc,type='l')
+} else if (option==11){
+    nn <- 50
+    P1 <- 0.4
+    P2 <- 0.6
+    M1 <- seq(from=5,to=16,length.out=nn)
+    M2 <- seq(from=5,to=16,length.out=nn)
+    S <- 1
+    f <- matrix(0,nn,nn)
+    p <- P2p(c(P1,P2))
+    s <- S2s(S)
+    for (i in 1:nn){
+        for (j in 1:nn){
+            m <- M2m(c(M1[i],M2[j]))
+            pms <- c(p,m,s)
+            f[i,j] <- smisfit(pms=pms,dat=dat)
+        }
+    }
+    contour(x=M1,y=M2,z=f)
+} else if (option==10){
     nc <- 5
     nr <- 50
     M <- seq(from=5,to=16,length.out=nc)
@@ -44,7 +67,7 @@ if (option==10){
     x <- lf
     for (i in 1:nc){
         x[,i] <- l
-        lf[,i] <- log(getfs_l_phi(dat,M=10,S=S[i]))
+        lf[,i] <- getfs_l_phi(dat,M=10,S=S[i])
     }
     matplot(x=l,y=lf,type='l')
 } else if (option==9){
@@ -77,17 +100,17 @@ if (option==10){
     lf <- matrix(0,nn,nn)
     gdat <- matrix(0,1,2)
     colnames(gdat) <- c('length','angle')
-    P1 <- 1
+    P1 <- 0.3
     P2 <- 0.7
-    M1 <- 10
-    M2 <- 5
-    S <- 2
+    M1 <- 7
+    M2 <- 12
+    S <- 1
     for (i in 1:nn){
         gdat[1,'length'] <- l[i]
         for (j in 1:nn){
             gdat[1,'angle'] <- a[j]
-            lf[i,j] <- log(P1*getfs_l_phi(gdat,M=M1,S=S)) # +
-            # log(P2 * getfs_l_phi(gdat,M=M2,S=S))
+            lf[i,j] <- (P1*getfs_l_phi(gdat,M=M1,S=S) +
+                        P2*getfs_l_phi(gdat,M=M2,S=S))
         }
     }
     pdat <- dat
@@ -95,16 +118,16 @@ if (option==10){
     plot(pdat,pch=21,col='grey')
     contour(x=l,y=a*180/pi,z=lf,
             xlab='length',ylab='angle',add=TRUE)
-    p <- 0#P2p(c(P1,P2))
-    m <- M2m(M1)#,M2m(c(M1,M2),mM=5,MM=16)
+    p <- P2p(c(P1,P2))
+    m <- M2m(c(M1,M2),mM=5,MM=16)
     s <- S2s(S)
     mf <- smisfit(c(m,s),dat,mM=5,MM=16)
     title(main=mf)
 } else if (option==6){
-    f <- log(getfs_l_phi(dat=dat,M=10,S=1))
-    plot(dat[,'angle'],f,type='p')
-    title(main=sum(f))
-    fit <- invert(dat,confined=confined,ncomp=1,mS=1,MS=1)
+    #f <- log(getfs_l_phi(dat=dat,M=10,S=1))
+    #plot(dat[,'angle'],f,type='p')
+    #title(main=sum(f))
+    fit <- invert(dat,confined=confined,ncomp=2)
 } else if (option==5){ # plot fs against l for different M
     nl <- 50
     nm <- 3
@@ -148,13 +171,9 @@ if (option==10){
     fm <- forward(fit$P,fit$M,fit$S)
     plotModel(fm,dat)
 } else if (option==1) {
-    P <- c(0.3,0.7)
-    M <- c(8,13)
-    S <- 1
-    fm <- forward(P,M,S)
-    plotModel(fm)
-    l <- simulate(fm,n=1000,confined=FALSE)
-    fit <- invert(l,confined=FALSE,ncomp=2)
+    fit <- invert(dat$l,confined=FALSE,ncomp=1)
+    fm <- forward(fit$P,fit$M,fit$S)
+    plotModel(fm,dat)
 }
 
 #mod <- forward(fit$P,fit$M,fit$S)

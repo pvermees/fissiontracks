@@ -4,13 +4,13 @@
 # header: does the .csv file contain a header?
 # skip: how many lines does the header contain
 # cols: column numbers of the true lengths and angles to the c-axis
-read.data <- function(fname,confined=FALSE,header=TRUE,skip=0,cols=c(5,9)){
+read.data <- function(fname,confined=FALSE,header=TRUE,skip=0,cols=c(5,9),cutoff=0){
     dat <- read.csv(file=fname,header=header,skip=skip)
-    nr <- nrow(dat)
-    out <- matrix(0,nr,2)
+    l <- dat[,cols[1]]
+    a <- dat[,cols[2]]*pi/180
+    long <- (l>cutoff)
+    out <- cbind(l[long],a[long])
     colnames(out) <- c('length','angle')
-    out[,'length'] <- dat[,cols[1]]
-    out[,'angle'] <- dat[,cols[2]]*pi/180
     if (confined) class(out) <- 'confined'
     else class(out) <- 'semi'
     out
@@ -18,17 +18,17 @@ read.data <- function(fname,confined=FALSE,header=TRUE,skip=0,cols=c(5,9)){
 
 # dat: input data read by the read.data function
 # ncomp: the number of components to fit
-invert <- function(dat,confined=FALSE,ncomp=2,mM=5,MM=16){
+invert <- function(dat,confined=FALSE,ncomp=2,mM=5,MM=16,mS=0.2,MS=2.0){
     # initialise with equal logratios
     pms <- rep(0,2*ncomp)
     if (confined) fit <- optim(pms,cmisfit,dat=dat)
-    else fit <- optim(pms,smisfit,dat=dat,mM=mM,MM=MM)
+    else fit <- optim(pms,smisfit,dat=dat,mM=mM,MM=MM,mS=mS,MS=MS)
     if (ncomp==1) P <- 1
     else P <- p2P(fit$par[1:(ncomp-1)])
     m <- fit$par[ncomp:(2*ncomp-1)]
     M <- m2M(m,mM=mM,MM=MM)
     s <- fit$par[2*ncomp]
-    S <- s2S(s)
+    S <- s2S(s,mS=mS,MS=MS)
     list(P=P,M=M,S=S)
 }
 
@@ -42,7 +42,7 @@ invert <- function(dat,confined=FALSE,ncomp=2,mM=5,MM=16){
 # |      |           \    |
 # |      |            \   |
 # ------mM----------------MM-----> l
-smisfit <- function(pms,dat,mM=5,MM=16,mS=0.2,MS=2){
+smisfit <- function(pms,dat,mM=5,MM=16,mS=0.9,MS=1.1){
     ncomp <- length(pms)/2
     if (ncomp==1) P <- 1
     else P <- p2P(pms[1:(ncomp-1)])
@@ -53,7 +53,7 @@ smisfit <- function(pms,dat,mM=5,MM=16,mS=0.2,MS=2){
     out <- 0
     for (i in 1:ncomp){
         f <- getfs_l_phi(dat=dat,M=M[i],S=S)
-        out <- out - sum(log(P[i]*f))
+        out <- out - log(sum(P[i]*f))
     }
     out
 }
@@ -65,6 +65,43 @@ getfs_l_phi <- function(dat,M,S){
     xi <- getXi(M)
     Ms <- eta+4*xi/(3*pi)
     (1-pnorm(q=l,mean=eta+xi*cos(phi),sd=S))*(sin(phi)^2)*4/(pi*Ms)
+}
+
+# equation 7.32
+# probability density at semi-track length tt
+getfs_l <- function(tt,P,M,S){
+    f <- 0 # initialise
+    for (i in 1:length(P)){
+        integrand <- function(phi,tt,Mi,S) {
+            dat <- cbind(tt,phi)
+            colnames(dat) <- c('length','angle')
+            getfs_l_phi(dat,Mi,S)
+        }
+        f <- f + P[i]*integrate(integrand,lower=0,upper=pi/2,
+                                tt=tt,Mi=M[i],S=S)$value
+    }
+    f
+}
+
+# equation 7.51
+# get the probability density of length l and angle(s) phi
+# M, S, l, theta and f are scalars
+getfc_l_phi <- function(l,phi,M,S){
+    eta <- getEta(M)
+    xi <- getXi(M)
+    dnorm(l,mean=eta+xi*cos(phi),sd=S)
+}
+
+# equation 2.4
+# get the probability density at confined FT length l integrating over phi
+# l is a scalar, while P, M and S are vectors of equal length
+getfc_l <- function(l,P,M,S){
+    f <- 0
+    for (i in 1:length(P)){
+        integrand <- function(phi) {sin(phi)*getfc_l_phi(l,phi,M[i],S)}
+        f <- f + P[i]*integrate(integrand,lower=0,upper=pi/2)$value
+    }
+    f
 }
 
 # equation 7.53
@@ -121,10 +158,11 @@ plotModel <- function(m,d=NULL){
 # P, M and S must have the same lengths
 forward <- function(P,M,S,mM=5,MM=16) {
     # calculate the confined and semi-track length distributions
-    l <- seq(from=0,to=20,by=0.01) # confined fission track lengths to evaluate
+    nl <- 100
+    l <- seq(from=0,to=20,length.out=nl) # confined fission track lengths to evaluate
     fc <- l
     fs <- l
-    for (i in 1:length(l)){       # loop through all the lengths
+    for (i in 1:nl){       # loop through all the lengths
         fc[i] <- getfc_l(l[i],P,M,S)  # calculate the pdf of the confined track lengths
         fs[i] <- getfs_l(l[i],P,M,S)  # calculate the pdf of the semi-track lengths
     }
@@ -142,7 +180,7 @@ M2m <- function(M,mM=5,MM=16){
     dM <- diff(c(mM,M))
     log(dM) - log(MM-M[nM])
 }
-S2s <- function(S,mS=0.2,MS=2){
+S2s <- function(S,mS=0.9,MS=1.1){
     log(S-mS) - log(MS-S)
 }
 
@@ -156,6 +194,6 @@ m2M <- function(m,mM=5,MM=16){
     dM <- (MM-mM)*exp(m)/(1+sum(exp(m)))
     mM + cumsum(dM)
 }
-s2S <- function(s,mS=0.2,MS=2){
+s2S <- function(s,mS=0.9,MS=1.1){
     mS + (MS-mS)*exp(s)/(1+exp(s))
 }
