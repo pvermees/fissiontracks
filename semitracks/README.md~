@@ -1,4 +1,4 @@
-### Summary
+# Summary
 
 This repository contains a collection of **R** scripts for fission
 track analysis. These include:
@@ -17,15 +17,15 @@ Binomial peak fitting of EDM data from multiple radiations.
 A tool to count fission tracks in **R**, and to prepare imagery for
 uploading to the eponymous web application.
 
-### Further information
+# Further information
 
-Galbraith, R.F., 2005, *Statistics for fission track analysis*. CRC
+[Galbraith, R.F., 2005, *Statistics for fission track analysis*. CRC
 Press.
 
-### Author
+# Author
 
 [Pieter Vermeesch](http://ucl.ac.uk/~ucfbpve/)
 
-### License
+# License
 
 This software is released under the GPL-3 License
