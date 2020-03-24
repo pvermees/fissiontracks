@@ -4,8 +4,8 @@
   distributions to confined fission track length distributions and
   vice versa. The script is provided with example datasets from the
   University of Melbourne. All the code in this README file can be run
-  by simply downloading the contents of
-  [http://github.com/pvermees/fissiontracks/semitracks/](http://github.com/pvermees/fissiontracks/semitracks/)
+  by simply downloading the contents of [this
+  folder](https://github.com/pvermees/fissiontracks/tree/master/semitracks)
   onto your computer. No other packages are required.
 
 ### Examples
