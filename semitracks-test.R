@@ -32,7 +32,7 @@ dat <- read.data(fname,confined=confined,skip=skip,cols=cols)
 option <- 12
 
 if (option==12){
-    plotModel(P=c(0.5,0.5),M=c(8,11),S=1)
+    plotModel(P=c(0.5,0.5),M=c(7,12),S=1,d=dat)
 } else if (option==11){
     nn <- 50
     P1 <- 0.4

@@ -86,7 +86,7 @@ getfs_l <- function(tt,P,M,S){
 # M, S, l, theta and f are scalars
 getfc_l_phi <- function(l,phi,P,M,S){
     out <- 0
-    for (i in length(P)){
+    for (i in 1:length(P)){
         eta <- getEta(M[i])
         xi <- getXi(M[i])
         out <- out + P[i]*dnorm(l,mean=eta+xi*cos(phi),sd=S)
@@ -98,13 +98,8 @@ getfc_l_phi <- function(l,phi,P,M,S){
 # get the probability density at confined FT length l integrating over phi
 # l is a scalar, while P, M and S are vectors of equal length
 getfc_l <- function(l,P,M,S){
-    out <- 0
-    for (i in 1:length(P)){
-        integrand <- function(phi,l,Pi,Mi,S) {sin(phi)*getfc_l_phi(l,phi,P[i],M[i],S)}
-        out <- out + integrate(integrand,lower=0,upper=pi/2,
-                               l=l,Pi=P[i],Mi=M[i],S=S)$value
-    }
-    out
+    integrand <- function(phi,l,P,M,S) {sin(phi)*getfc_l_phi(l,phi,P,M,S)}
+    integrate(integrand,lower=0,upper=pi/2,l=l,P=P,M=M,S=S)$value
 }
 
 # equation 7.53
@@ -131,28 +126,44 @@ plotModel <- function(P,M,S,d=NULL){
     par(pty='s',mfrow=c(2,2))
     m <- forward(P=P,M=M,S=S)
     xlab <- expression(paste("length [",mu,"m]"))
-    if (is.null(d)){
-        plot(m$l,m$fc_l,type='l',xlab=xlab,ylab='')
-        title(main='confined tracks')
-        plot(m$l,m$fs_l,type='l',xlab=xlab,ylab='')
-        title(main='semi-tracks')
+    hasdat <- !is.null(d)
+    confined <- hasdat && is(d,'confined')
+    semi <- hasdat && is(d,'semi')
+    if (hasdat) h <- hist(d[,'length'],plot=FALSE)
+    if (confined){
+        plot(h,freq=FALSE,main='',ylim=range(h$density,m$fc_l),xlab=xlab)
+        lines(m$l,m$fc_l,type='l',xlab=xlab,ylab='')
     } else {
-        h <- hist(d$l)
-        plot(d$l,d$a,type='p', xlab=xlab, ylab='angle to C')
-        plot(h,freq=FALSE,main='',ylim=range(h$density,m$fs),xlab=xlab)
-        if (d$confined){
-            lines(m$l,m$fc)
-            title(smisfit(m$pms,d$l))
-            plot(m$l,m$fs,type='l',xlab=xlab)
-        } else {
-            cutoff <- min(d$l)
-            fsL.of.uncounted <- getfs_l(cutoff,P=m$P,M=m$M,S=m$S)
-            corr.factor <- 1/(1-cutoff*fsL.of.uncounted)
-            lines(m$l,m$fs*corr.factor)
-            title(smisfit(m$pms,d$l))
-            plot(m$l,m$fc,type='l',xlab=xlab,ylab='Density')
-        }
+        plot(m$l,m$fc_l,type='l',xlab=xlab,ylab='')
     }
+    title(main='confined tracks')
+    if (semi){
+        plot(h,freq=FALSE,main='',ylim=range(h$density,m$fs_l),xlab=xlab)
+        lines(m$l,m$fs_l,type='l',xlab=xlab,ylab='')
+    } else {
+        plot(m$l,m$fs_l,type='l',xlab=xlab,ylab='')
+    }
+    title(main='semi-tracks')
+    if (confined){
+        plot(d[,'length'],d[,'angle']*180/pi,pch=21,col='grey',
+             xlab=xlab,ylab='angle (degrees)')
+        contour(x=m$l,y=m$phi*180/pi,z=m$fc_l_phi,
+                xlab=xlab,ylab='angle (degrees)',add=TRUE)
+
+    } else {
+        contour(x=m$l,y=m$phi*180/pi,z=m$fc_l_phi,
+                xlab=xlab,ylab='angle (degrees)',add=FALSE)
+    }
+    title(main='confined tracks')
+    if (semi){
+        plot(d[,'length'],d[,'angle']*180/pi,pch=21,col='grey',
+             xlab=xlab,ylab='angle (degrees)')
+        contour(x=m$l,y=m$phi*180/pi,z=m$fs_l_phi,add=TRUE)
+    } else {
+        contour(x=m$l,y=m$phi*180/pi,z=m$fs_l_phi,
+                xlab=xlab,ylab='angle (degrees)')
+    }
+    title(main='semi-tracks')
 }
 
 # P = vector with the proportions of the length peaks
@@ -170,12 +181,12 @@ forward <- function(P,M,S,nn=50) {
     out$fc_l_phi <- matrix(0,nn,nn)
     out$fs_l_phi <- matrix(0,nn,nn)
     for (i in 1:nn){
-        out$fc_l[i] <- getfc_l(out$l[i],P=P,M=M,S=S)
-        out$fs_l[i] <- getfs_l(out$l[i],P=P,M=M,S=S)
         for (j in 1:nn){
             out$fc_l_phi[i,j] <- getfc_l_phi(l=out$l[i],phi=out$phi[j],P=P,M=M,S=S)
             out$fs_l_phi[i,j] <- getfs_l_phi(l=out$l[i],phi=out$phi[j],P=P,M=M,S=S)
         }
+        out$fc_l[i] <- getfc_l(l=out$l[i],P=P,M=M,S=S)
+        out$fs_l[i] <- getfs_l(tt=out$l[i],P=P,M=M,S=S)
     }
     out
 }
