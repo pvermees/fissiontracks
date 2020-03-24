@@ -1,9 +1,9 @@
 rm(list=ls())
 graphics.off()
 setwd('~/Documents/Programming/R/fissiontracks/')
-source('semitracks2.R')
+source('semitracks.R')
 
-example <- 3
+example <- 2
 
 if (example==1){
     fname <- 'track-lengths/fct_c_semi.csv'
@@ -27,7 +27,7 @@ if (example==1){
     cols <- c(6,9)
 }
 
-dat <- read.data(fname,confined=confined,skip=skip,cols=cols)
+dat <- read.data(fname,confined=confined,skip=skip,cols=cols,cutoff=0)
 
 option <- 12
 
