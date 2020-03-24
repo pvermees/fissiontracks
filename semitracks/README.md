@@ -12,8 +12,8 @@
 
 1. Forward modelling the anisotropic length distribution of confined
 fission tracks and semi-tracks for a three component mixture
-containing 20\% tracks of 7 $\pm$ 0.5 $\mu$m long, 40\% tracks of 10
-$\pm$ 0.5 $\mu$m long, and 40\% tracks of 14 $\pm$ 0.5 $\mu$m long:
+containing 20\% tracks of 7 &plusmn; 0.5 &mu;m long, 40\% tracks of 10
+&plusmn; 0.5 &mu;m long, and 40\% tracks of 14 &plusmn; 0.5 &mu;m long:
 
 
 ```
