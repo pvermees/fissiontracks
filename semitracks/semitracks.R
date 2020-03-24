@@ -4,12 +4,11 @@
 # header: does the .csv file contain a header?
 # skip: how many lines does the header contain
 # cols: column numbers of the true lengths and angles to the c-axis
-read.data <- function(fname,confined=FALSE,header=TRUE,skip=0,cols=c(5,9),cutoff=0){
+read.data <- function(fname,confined=FALSE,header=TRUE,skip=0,cols=c(5,9)){
     dat <- read.csv(file=fname,header=header,skip=skip)
     l <- dat[,cols[1]]
     a <- dat[,cols[2]]*pi/180
-    long <- (l>cutoff)
-    out <- cbind(l[long],a[long])
+    out <- cbind(l,a)
     colnames(out) <- c('length','angle')
     if (confined) class(out) <- 'confined'
     else class(out) <- 'semi'

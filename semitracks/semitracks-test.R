@@ -27,13 +27,12 @@ if (example==1){
     cols <- c(6,9)
 }
 
-dat <- read.data(fname,confined=confined,skip=skip,cols=cols,cutoff=0)
+dat <- read.data(fname,confined=confined,skip=skip,cols=cols)
 
 option <- 12
 
 if (option==12){
     fit <- invert(dat,confined=confined,ncomp=2)
-    #plotModel(P=c(0.5,0.5),M=c(7,12),S=1,d=dat)
     plotModel(P=fit$P,M=fit$M,S=fit$S,d=dat)
 } else if (option==11){
     nn <- 50
