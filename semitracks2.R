@@ -32,6 +32,18 @@ invert <- function(dat,confined=FALSE,ncomp=2,mM=5,MM=16,mS=0.2,MS=2.0){
     list(P=P,M=M,S=S)
 }
 
+# maximum (negative) likelihood misfit function for confined tracks
+cmisfit <- function(pms,dat,mM=5,MM=16,mS=0.2,MS=2.0){
+    ncomp <- length(pms)/2
+    if (ncomp==1) P <- 1
+    else P <- p2P(pms[1:(ncomp-1)])
+    m <- pms[ncomp:(2*ncomp-1)]
+    M <- m2M(m,mM=mM,MM=MM)
+    s <- pms[2*ncomp]
+    S <- s2S(s,mS=mS,MS=MS)
+    -sum(log(getfc_l_phi(l=dat[,'length'],phi=dat[,'angle'],P=P,M=M,S=S)))
+}
+
 # maximum (negative) likelihood misfit function for semi-tracks
 # ^f
 # |----------

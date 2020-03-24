@@ -3,7 +3,7 @@ graphics.off()
 setwd('~/Documents/Programming/R/fissiontracks/')
 source('semitracks2.R')
 
-example <- 2
+example <- 3
 
 if (example==1){
     fname <- 'track-lengths/fct_c_semi.csv'
