@@ -50,12 +50,7 @@ smisfit <- function(pms,dat,mM=5,MM=16,mS=0.9,MS=1.1){
     M <- m2M(m,mM=mM,MM=MM)
     s <- pms[2*ncomp]
     S <- s2S(s,mS=mS,MS=MS)
-    out <- 0
-    for (i in 1:ncomp){
-        f <- getfs_l_phi(l=dat[i,'length'],phi=dat[i,'angle'],M=M[i],S=S)
-        out <- out - log(sum(P[i]*f))
-    }
-    out
+    -sum(log(getfs_l_phi(l=dat[,'length'],phi=dat[,'angle'],P=P,M=M,S=S)))
 }
 
 getfs_l_phi <- function(l,phi,P,M,S){
