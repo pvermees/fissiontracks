@@ -52,56 +52,59 @@ smisfit <- function(pms,dat,mM=5,MM=16,mS=0.9,MS=1.1){
     S <- s2S(s,mS=mS,MS=MS)
     out <- 0
     for (i in 1:ncomp){
-        f <- getfs_l_phi(dat=dat,M=M[i],S=S)
+        f <- getfs_l_phi(l=dat[i,'length'],phi=dat[i,'angle'],M=M[i],S=S)
         out <- out - log(sum(P[i]*f))
     }
     out
 }
 
-getfs_l_phi <- function(dat,M,S){
-    l <- dat[,'length']
-    phi <- dat[,'angle']
-    eta <- getEta(M)
-    xi <- getXi(M)
-    Ms <- eta+4*xi/(3*pi)
-    (1-pnorm(q=l,mean=eta+xi*cos(phi),sd=S))*(sin(phi)^2)*4/(pi*Ms)
+getfs_l_phi <- function(l,phi,P,M,S){
+    out <- 0
+    for (i in 1:length(P)){
+        eta <- getEta(M[i])
+        xi <- getXi(M[i])
+        Ms <- eta+4*xi/(3*pi)
+        out <- out + P[i]*(1-pnorm(q=l,mean=eta+xi*cos(phi),sd=S))*(sin(phi)^2)*4/(pi*Ms)
+    }
+    out
 }
 
 # equation 7.32
 # probability density at semi-track length tt
 getfs_l <- function(tt,P,M,S){
-    f <- 0 # initialise
+    out <- 0 # initialise
     for (i in 1:length(P)){
-        integrand <- function(phi,tt,Mi,S) {
-            dat <- cbind(tt,phi)
-            colnames(dat) <- c('length','angle')
-            getfs_l_phi(dat,Mi,S)
-        }
-        f <- f + P[i]*integrate(integrand,lower=0,upper=pi/2,
-                                tt=tt,Mi=M[i],S=S)$value
+        integrand <- function(phi,tt,Pi,Mi,S) { getfs_l_phi(l=tt,phi=phi,Pi,Mi,S) }
+        out <- out + integrate(integrand,lower=0,upper=pi/2,
+                               tt=tt,Pi=P[i],Mi=M[i],S=S)$value
     }
-    f
+    out
 }
 
 # equation 7.51
 # get the probability density of length l and angle(s) phi
 # M, S, l, theta and f are scalars
-getfc_l_phi <- function(l,phi,M,S){
-    eta <- getEta(M)
-    xi <- getXi(M)
-    dnorm(l,mean=eta+xi*cos(phi),sd=S)
+getfc_l_phi <- function(l,phi,P,M,S){
+    out <- 0
+    for (i in length(P)){
+        eta <- getEta(M[i])
+        xi <- getXi(M[i])
+        out <- out + P[i]*dnorm(l,mean=eta+xi*cos(phi),sd=S)
+    }
+    out
 }
 
 # equation 2.4
 # get the probability density at confined FT length l integrating over phi
 # l is a scalar, while P, M and S are vectors of equal length
 getfc_l <- function(l,P,M,S){
-    f <- 0
+    out <- 0
     for (i in 1:length(P)){
-        integrand <- function(phi) {sin(phi)*getfc_l_phi(l,phi,M[i],S)}
-        f <- f + P[i]*integrate(integrand,lower=0,upper=pi/2)$value
+        integrand <- function(phi,l,Pi,Mi,S) {sin(phi)*getfc_l_phi(l,phi,P[i],M[i],S)}
+        out <- out + integrate(integrand,lower=0,upper=pi/2,
+                               l=l,Pi=P[i],Mi=M[i],S=S)$value
     }
-    f
+    out
 }
 
 # equation 7.53
@@ -124,17 +127,17 @@ getELA <- function(mu,phi){
 }
 
 # m = forward model, d = data
-plotModel <- function(m,d=NULL){
+plotModel <- function(P,M,S,d=NULL){
+    par(pty='s',mfrow=c(2,2))
+    m <- forward(P=P,M=M,S=S)
     xlab <- expression(paste("length [",mu,"m]"))
     if (is.null(d)){
-        par(pty='s',mfrow=c(1,2))
-        plot(m$l,m$fc,type='l',xlab=xlab,ylab='')
+        plot(m$l,m$fc_l,type='l',xlab=xlab,ylab='')
         title(main='confined tracks')
-        plot(m$l,m$fs,type='l',xlab=xlab,ylab='')
+        plot(m$l,m$fs_l,type='l',xlab=xlab,ylab='')
         title(main='semi-tracks')
     } else {
         h <- hist(d$l)
-        par(pty='s',mfrow=c(2,2))
         plot(d$l,d$a,type='p', xlab=xlab, ylab='angle to C')
         plot(h,freq=FALSE,main='',ylim=range(h$density,m$fs),xlab=xlab)
         if (d$confined){
@@ -154,20 +157,27 @@ plotModel <- function(m,d=NULL){
 
 # P = vector with the proportions of the length peaks
 # M = vector with the means of the length peaks
-# S = vector with the standard deviations of the length peaks
-# P, M and S must have the same lengths
-forward <- function(P,M,S,mM=5,MM=16) {
-    # calculate the confined and semi-track length distributions
-    nl <- 100
-    l <- seq(from=0,to=20,length.out=nl) # confined fission track lengths to evaluate
-    fc <- l
-    fs <- l
-    for (i in 1:nl){       # loop through all the lengths
-        fc[i] <- getfc_l(l[i],P,M,S)  # calculate the pdf of the confined track lengths
-        fs[i] <- getfs_l(l[i],P,M,S)  # calculate the pdf of the semi-track lengths
+# S = the standard deviation of the length peaks
+# P and M must have the same lengths
+# nn = number of points at which to evaluate fc and fs
+forward <- function(P,M,S,nn=50) {
+    nn <- 100
+    out <- list()
+    out$l <- seq(from=0,to=20,length.out=nn)
+    out$phi <- seq(from=0,to=pi/2,length.out=nn)
+    out$fc_l <- rep(0,nn)
+    out$fs_l <- rep(0,nn)
+    out$fc_l_phi <- matrix(0,nn,nn)
+    out$fs_l_phi <- matrix(0,nn,nn)
+    for (i in 1:nn){
+        out$fc_l[i] <- getfc_l(out$l[i],P=P,M=M,S=S)
+        out$fs_l[i] <- getfs_l(out$l[i],P=P,M=M,S=S)
+        for (j in 1:nn){
+            out$fc_l_phi[i,j] <- getfc_l_phi(l=out$l[i],phi=out$phi[j],P=P,M=M,S=S)
+            out$fs_l_phi[i,j] <- getfs_l_phi(l=out$l[i],phi=out$phi[j],P=P,M=M,S=S)
+        }
     }
-    pms <- c(P2p(P),M2m(M,mM,MM),S2s(S))
-    list(l=l,fs=fs,fc=fc,P=P,M=M,S=S,pms=pms)
+    out
 }
 
 ## log(ratio) transformations:

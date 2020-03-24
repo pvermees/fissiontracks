@@ -32,10 +32,7 @@ dat <- read.data(fname,confined=confined,skip=skip,cols=cols)
 option <- 12
 
 if (option==12){
-    m <- forward(P=c(0.5,0.5),M=c(8,12),S=1,mM=5,MM=16)
-    par(mfrow=c(2,2))
-    plot(m$l,m$fs,type='l')
-    plot(m$l,m$fc,type='l')
+    plotModel(P=c(0.5,0.5),M=c(8,11),S=1)
 } else if (option==11){
     nn <- 50
     P1 <- 0.4
