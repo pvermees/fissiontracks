@@ -17,6 +17,9 @@ read.data <- function(fname,confined=FALSE,header=TRUE,skip=0,cols=c(5,9)){
 
 # dat: input data read by the read.data function
 # ncomp: the number of components to fit
+# mM and MM: minimum and maximum limit for the modal lengths
+# mS and MS: minimum and maximum limit for the peak widths
+# r0: cutoff value below which the semi-track lengths are deemed unreliable
 invert <- function(dat,confined=FALSE,ncomp=2,mM=5,MM=16,mS=0.2,MS=2.0,r0=0){
     # initialise with equal logratios
     pms <- rep(0,2*ncomp)
@@ -45,14 +48,14 @@ cmisfit <- function(pms,dat,mM=5,MM=16,mS=0.2,MS=2.0){
 
 # maximum (negative) likelihood misfit function for semi-tracks
 # ^f
-# |----------
-# |      |   \            |
-# |      |    \           |
-# |      |     \          |
-# |      |      ----\     |
-# |      |           \    |
-# |      |            \   |
-# ------mM----------------MM-----> l
+# |  ---------
+# | |     |   \            |
+# | |     |    \           |
+# | |     |     \          |
+# | |     |      ----\     |
+# | |     |           \    |
+# | |     |            \   |
+# --r0---mM----------------MM-----> l
 smisfit <- function(pms,dat,mM=5,MM=16,mS=0.9,MS=1.1,r0=0){
     longenough <- dat[,'length']>r0
     l <- dat[longenough,'length']
@@ -68,6 +71,10 @@ smisfit <- function(pms,dat,mM=5,MM=16,mS=0.9,MS=1.1,r0=0){
     -sum(log(getfs_l_phi(l=l,phi=a,P=P,M=M,S=S)/Fs_r0))
 }
 
+# P = vector with the proportions of the length peaks
+# M = vector with the means of the length peaks
+# S = the standard deviation of the length peaks
+# P and M must have the same lengths
 getfs_l_phi <- function(l,phi,P,M,S){
     out <- 0
     for (i in 1:length(P)){
@@ -136,7 +143,10 @@ getELA <- function(mu,phi){
 }
 
 # fit = forward model, dat = data
-plotModel <- function(fit,dat=NULL){
+plotModel <- function(P=1,M=10,S=1,r0=0,dat=NULL,fit){
+    if (missing(fit)){
+        fit <- list(P=P,M=M,S=S,r0=r0)
+    }
     par(pty='s',mfrow=c(2,2))
     m <- forward(fit)
     xlab <- expression(paste("length [",mu,"m]"))
@@ -184,10 +194,6 @@ plotModel <- function(fit,dat=NULL){
     title(main='semi-tracks')
 }
 
-# P = vector with the proportions of the length peaks
-# M = vector with the means of the length peaks
-# S = the standard deviation of the length peaks
-# P and M must have the same lengths
 # nn = number of points at which to evaluate fc and fs
 forward <- function(fit,nn=50) {
     P <- fit$P

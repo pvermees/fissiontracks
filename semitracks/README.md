@@ -28,26 +28,27 @@ plotModel(P,M,S)       # plot the forward model
 dataset of 1004 semi-track length measurements:
 
 ```
-dat <- read.data(fname='track-lengths/UM10-10 Brogo 3D Semi Tracks with Dper.csv',
-                 confined=FALSE,skip=5,cols=c(5,9))
-fit <- invert(dat,confined=FALSE,ncomp=2)
-plotModel(P=fit$P,M=fit$M,S=fit$S,d=dat)
+d <- read.data(fname='track-lengths/UM10-10 Brogo 3D Semi Tracks with Dper.csv',
+               confined=FALSE,skip=5,cols=c(5,9))
+f <- invert(dat,confined=FALSE,ncomp=2,r0=1)
+plotModel(fit=f,dat=d)
 ```
 
 where **skip** indicates the length of the header; **cols** marks the
 columns containing the length and angle measurements; and **ncomp** is
 the number of components.  **fit** is a list with the best fit
 proportions (**fit\$P**), modal lengths (**fit\$M**) and peak width
-(**fit\$S**).
+(**fit\$S**). **r0** is a cutoff value (in microns) below which the
+semi-track length measurements are considered to be unreliable.
 
 3. Estimating the semi-track track length distribution from a dataset
 of 154 confined track length measurements:
 
 ```
-dat <- read.data(fname='track-lengths/UM10-10 Brogo 3D Confined Lengths.csv',
-                 confined=TRUE,skip=5,cols=c(5,9))
-fit <- invert(dat,confined=TRUE,ncomp=2)
-plotModel(P=fit$P,M=fit$M,S=fit$S,d=dat)
+d <- read.data(fname='track-lengths/UM10-10 Brogo 3D Confined Lengths.csv',
+               confined=TRUE,skip=5,cols=c(5,9))
+f <- invert(dat,confined=TRUE,ncomp=2)
+plotModel(fit=f,dat=d)
 ```
 
 # Further information
