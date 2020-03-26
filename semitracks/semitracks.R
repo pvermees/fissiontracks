@@ -70,9 +70,18 @@ getfs_l_phi <- function(l,phi,P,M,S){
         eta <- getEta(M[i])
         xi <- getXi(M[i])
         Ms <- eta+4*xi/(3*pi)
-        out <- out + P[i]*(1-pnorm(q=l,mean=eta+xi*cos(phi),sd=S))*(sin(phi)^2)*4/(pi*Ms)
+        mu <- eta+xi*cos(phi)
+        out <- out + P[i]*(1-pnorm(q=l,mean=mu,sd=S))*(sin(phi)^2)*4/(pi*Ms)
     }
     out
+}
+
+getFs_r0 <- function(r0,P,M,S){
+    integrand <- Vectorize(
+        function(r0,phi=phi,P=P,M=M,S=S) {
+            integrate(getfs_l_phi,lower=0,upper=r0,phi=phi,P=P,M=M,S=S)$value
+        }, vectorize.args='phi')
+    1 - integrate(integrand,lower=0,upper=pi/2,r0=r0,P=P,M=M,S=S)$value
 }
 
 # equation 7.32

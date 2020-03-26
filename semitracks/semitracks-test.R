@@ -1,6 +1,6 @@
 rm(list=ls())
 graphics.off()
-setwd('~/Documents/Programming/R/fissiontracks/')
+setwd('~/Documents/Programming/R/fissiontracks/semitracks/')
 source('semitracks.R')
 
 example <- 2
@@ -33,7 +33,8 @@ option <- 12
 
 if (option==12){
     fit <- invert(dat,confined=confined,ncomp=2)
-    plotModel(P=fit$P,M=fit$M,S=fit$S,d=dat)
+    getFs_r0(r0=0,P=fit$P,M=fit$M,S=fit$S)
+    #plotModel(P=fit$P,M=fit$M,S=fit$S,d=dat)
 } else if (option==11){
     nn <- 50
     P1 <- 0.4

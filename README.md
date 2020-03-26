@@ -3,7 +3,7 @@
 This repository contains a collection of **R** scripts for fission
 track analysis. These include:
 
-1. **semitracks**
+1. **[semitracks](https://github.com/pvermees/fissiontracks/tree/master/semitracks)**
 
 Scripts to estimate confined fission track length distributions from
 semi-track length distributions and vice versa.
