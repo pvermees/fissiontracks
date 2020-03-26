@@ -17,18 +17,18 @@ read.data <- function(fname,confined=FALSE,header=TRUE,skip=0,cols=c(5,9)){
 
 # dat: input data read by the read.data function
 # ncomp: the number of components to fit
-invert <- function(dat,confined=FALSE,ncomp=2,mM=5,MM=16,mS=0.2,MS=2.0){
+invert <- function(dat,confined=FALSE,ncomp=2,mM=5,MM=16,mS=0.2,MS=2.0,r0=0){
     # initialise with equal logratios
     pms <- rep(0,2*ncomp)
     if (confined) fit <- optim(pms,cmisfit,dat=dat)
-    else fit <- optim(pms,smisfit,dat=dat,mM=mM,MM=MM,mS=mS,MS=MS)
+    else fit <- optim(pms,smisfit,dat=dat,mM=mM,MM=MM,mS=mS,MS=MS,r0=r0)
     if (ncomp==1) P <- 1
     else P <- p2P(fit$par[1:(ncomp-1)])
     m <- fit$par[ncomp:(2*ncomp-1)]
     M <- m2M(m,mM=mM,MM=MM)
     s <- fit$par[2*ncomp]
     S <- s2S(s,mS=mS,MS=MS)
-    list(P=P,M=M,S=S)
+    list(P=P,M=M,S=S,r0=r0)
 }
 
 # maximum (negative) likelihood misfit function for confined tracks
@@ -53,7 +53,10 @@ cmisfit <- function(pms,dat,mM=5,MM=16,mS=0.2,MS=2.0){
 # |      |           \    |
 # |      |            \   |
 # ------mM----------------MM-----> l
-smisfit <- function(pms,dat,mM=5,MM=16,mS=0.9,MS=1.1){
+smisfit <- function(pms,dat,mM=5,MM=16,mS=0.9,MS=1.1,r0=0){
+    longenough <- dat[,'length']>r0
+    l <- dat[longenough,'length']
+    a <- dat[longenough,'angle']
     ncomp <- length(pms)/2
     if (ncomp==1) P <- 1
     else P <- p2P(pms[1:(ncomp-1)])
@@ -61,7 +64,8 @@ smisfit <- function(pms,dat,mM=5,MM=16,mS=0.9,MS=1.1){
     M <- m2M(m,mM=mM,MM=MM)
     s <- pms[2*ncomp]
     S <- s2S(s,mS=mS,MS=MS)
-    -sum(log(getfs_l_phi(l=dat[,'length'],phi=dat[,'angle'],P=P,M=M,S=S)))
+    Fs_r0 <- getFs_r0(P=P,M=M,S=S,r0=r0)
+    -sum(log(getfs_l_phi(l=l,phi=a,P=P,M=M,S=S)/Fs_r0))
 }
 
 getfs_l_phi <- function(l,phi,P,M,S){
@@ -76,7 +80,7 @@ getfs_l_phi <- function(l,phi,P,M,S){
     out
 }
 
-getFs_r0 <- function(r0,P,M,S){
+getFs_r0 <- function(P,M,S,r0=0){
     integrand <- Vectorize(
         function(r0,phi=phi,P=P,M=M,S=S) {
             integrate(getfs_l_phi,lower=0,upper=r0,phi=phi,P=P,M=M,S=S)$value
@@ -131,15 +135,19 @@ getELA <- function(mu,phi){
     getEta(mu) + getXi(mu)*cos(phi)
 }
 
-# m = forward model, d = data
-plotModel <- function(P,M,S,d=NULL){
+# fit = forward model, dat = data
+plotModel <- function(fit,dat=NULL){
     par(pty='s',mfrow=c(2,2))
-    m <- forward(P=P,M=M,S=S)
+    m <- forward(fit)
     xlab <- expression(paste("length [",mu,"m]"))
-    hasdat <- !is.null(d)
-    confined <- hasdat && is(d,'confined')
-    semi <- hasdat && is(d,'semi')
-    if (hasdat) h <- hist(d[,'length'],plot=FALSE)
+    hasdat <- !is.null(dat)
+    confined <- hasdat && is(dat,'confined')
+    semi <- hasdat && is(dat,'semi')
+    if (hasdat){
+        longenough <- dat[,'length']>fit$r0
+        d <- dat[longenough,]
+        h <- hist(d[,'length'],plot=FALSE)
+    }
     if (confined){
         plot(h,freq=FALSE,main='',ylim=range(h$density,m$fc_l),xlab=xlab)
         lines(m$l,m$fc_l,type='l',xlab=xlab,ylab='')
@@ -181,7 +189,11 @@ plotModel <- function(P,M,S,d=NULL){
 # S = the standard deviation of the length peaks
 # P and M must have the same lengths
 # nn = number of points at which to evaluate fc and fs
-forward <- function(P,M,S,nn=50) {
+forward <- function(fit,nn=50) {
+    P <- fit$P
+    M <- fit$M
+    S <- fit$S
+    r0 <- fit$r0
     nn <- 100
     out <- list()
     out$l <- seq(from=0,to=20,length.out=nn)
@@ -190,13 +202,14 @@ forward <- function(P,M,S,nn=50) {
     out$fs_l <- rep(0,nn)
     out$fc_l_phi <- matrix(0,nn,nn)
     out$fs_l_phi <- matrix(0,nn,nn)
+    out$Fs_r0 <- getFs_r0(P=P,M=M,S=S,r0=r0)
     for (i in 1:nn){
         for (j in 1:nn){
             out$fc_l_phi[i,j] <- getfc_l_phi(l=out$l[i],phi=out$phi[j],P=P,M=M,S=S)
-            out$fs_l_phi[i,j] <- getfs_l_phi(l=out$l[i],phi=out$phi[j],P=P,M=M,S=S)
+            out$fs_l_phi[i,j] <- getfs_l_phi(l=out$l[i],phi=out$phi[j],P=P,M=M,S=S)/out$Fs_r0
         }
         out$fc_l[i] <- getfc_l(l=out$l[i],P=P,M=M,S=S)
-        out$fs_l[i] <- getfs_l(tt=out$l[i],P=P,M=M,S=S)
+        out$fs_l[i] <- getfs_l(tt=out$l[i],P=P,M=M,S=S)/out$Fs_r0
     }
     out
 }
