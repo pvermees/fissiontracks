@@ -3,13 +3,13 @@ graphics.off()
 setwd('~/Documents/Programming/R/fissiontracks/semitracks/')
 source('semitracks.R')
 
-example <- 2
+example <- 1
 
 if (example==1){
     fname <- 'track-lengths/fct_c_semi.csv'
     confined <- FALSE
     skip <- 0
-    cols <- c(5,9)
+    cols <- c(5,8)
 } else if (example==2){
     fname <- 'track-lengths/UM10-10 Brogo 3D Semi Tracks with Dper.csv'
     confined <- FALSE
@@ -32,8 +32,9 @@ dat <- read.data(fname,confined=confined,skip=skip,cols=cols)
 option <- 12
 
 if (option==12){
-    fit <- invert(dat,confined=confined,ncomp=2,r0=0)
+    fit <- invert(dat,confined=confined,ncomp=2,r0=1)
     plotModel(fit=fit,dat=dat)
+    dat <- hcft(fit=fit,nn=200)
 } else if (option==11){
     nn <- 50
     P1 <- 0.4

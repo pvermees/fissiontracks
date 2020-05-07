@@ -143,7 +143,7 @@ getELA <- function(mu,phi){
 }
 
 # fit = forward model, dat = data
-plotModel <- function(P=1,M=10,S=1,r0=0,dat=NULL,fit){
+plotModel <- function(fit,P=1,M=10,S=1,r0=0,dat=NULL){
     if (missing(fit)){
         fit <- list(P=P,M=M,S=S,r0=r0)
     }
@@ -246,4 +246,21 @@ m2M <- function(m,mM=5,MM=16){
 }
 s2S <- function(s,mS=0.9,MS=1.1){
     mS + (MS-mS)*exp(s)/(1+exp(s))
+}
+
+# create a synthetic dataset of horizontally confined fission track lengths
+hcft <- function(fit,nn=100){
+    misfit <- function(l,q,fit){
+        Q <- 0
+        for (i in 1:length(fit$P)){
+            Q <- Q + fit$P[i]*pnorm(q=l,mean=fit$M[i],sd=fit$S)
+        }
+        (Q - q)^2
+    }
+    out <- rep(0,nn)
+    quantile <- seq(from=0,to=1,length.out=(nn+2))[2:(nn+1)]
+    for (i in 1:nn){
+        out[i] <- optimise(misfit,interval=c(0,20),q=quantile[i],fit=fit)$minimum
+    }
+    out
 }

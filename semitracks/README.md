@@ -51,6 +51,13 @@ f <- invert(dat,confined=TRUE,ncomp=2)
 plotModel(fit=f,dat=d)
 ```
 
+4. Using semitrack data to generate 200 synthetic horizontally
+confined fission tracks for thermal history modelling:
+
+```
+hcft(fit=fit,nn=200)
+```
+
 # Further information
 
 Galbraith, R.F., 2005, *Statistics for fission track analysis*. CRC
