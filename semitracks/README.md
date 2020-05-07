@@ -30,8 +30,8 @@ dataset of 1004 semi-track length measurements:
 ```
 d <- read.data(fname='track-lengths/UM10-10 Brogo 3D Semi Tracks with Dper.csv',
                confined=FALSE,skip=5,cols=c(5,9))
-f <- invert(dat,confined=FALSE,ncomp=2,r0=1)
-plotModel(fit=f,dat=d)
+sf <- invert(dat,confined=FALSE,ncomp=2,r0=1)
+plotModel(fit=sf,dat=d)
 ```
 
 where **skip** indicates the length of the header; **cols** marks the
@@ -47,15 +47,16 @@ of 154 confined track length measurements:
 ```
 d <- read.data(fname='track-lengths/UM10-10 Brogo 3D Confined Lengths.csv',
                confined=TRUE,skip=5,cols=c(5,9))
-f <- invert(dat,confined=TRUE,ncomp=2)
-plotModel(fit=f,dat=d)
+cf <- invert(dat,confined=TRUE,ncomp=2)
+plotModel(fit=cf,dat=d)
 ```
 
-4. Using semitrack data to generate 200 synthetic horizontally
+4. Using the semitrack data fit to generate 200 synthetic horizontally
 confined fission tracks for thermal history modelling:
 
 ```
-hcft(fit=fit,nn=200)
+dat <- hcft(fit=sf,nn=200)
+hist(dat)
 ```
 
 # Further information
