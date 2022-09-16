@@ -3,16 +3,25 @@ graphics.off()
 setwd('~/Documents/Programming/R/fissiontracks/semitracks/')
 source('semitracks.R')
 
-example <- 0
+example <- 4
 
 if (example==0){
-    i <- 2
-    M <- c(15,8,11.5)
-    S <- c(0.87,1.79,0.97)
-    l <- seq(from=0,to=20,length.out=200)
-    fs <- lapply(l,getfs_l,P=1,M=M[i],S=S[i])
-    fl <- lapply(l,getfc_l,P=1,M=M[i],S=S[i])
-    matplot(cbind(l,l),cbind(fs,fl),lty=1,col='black',type='l')
+    l <- seq(from=0,to=20,length.out=50)
+    M <- 8
+    S <- 1.79
+    dS <- 1
+    fsa <- lapply(l,getfs_l,P=1,M=M,S=S)
+    fsb <- lapply(l,getfs_l,P=1,M=M,S=S-dS)
+    fla <- lapply(l,getfc_l,P=1,M=M,S=S)
+    flb <- lapply(l,getfc_l,P=1,M=M,S=S-dS)
+    matplot(cbind(l,l,l,l),cbind(fsa,fla,fsb,flb),
+            lty=c(1,1,2,2),col=c('black','blue','black','blue'),
+            type='l',xlab='track length (l)',ylab='f(l)')
+    legend('topright',legend=c(paste0('semitracks (S=',S,')'),
+                               paste0('confined tracks (S=',S,')'),
+                               paste0('semitracks (S=',S-dS,')'),
+                               paste0('confined tracks (S=',S-dS,')')),
+           lty=c(1,1,2,2),col=c('black','blue','black','blue'))
 } else if (example==1){
     fname <- 'track-lengths/fct_c_semi.csv'
     confined <- FALSE
