@@ -30,7 +30,7 @@ xml2json <- function(fname,odir,sample="mysample",project="myproject"){
         if (!dir.exists(oname)) dir.create(oname)
         raw <- jsonlite::toJSON(rois[[i]],auto_unbox=TRUE)
         opening <- gsub('"regions":{',replacement='"regions":[{',x=raw,fixed=TRUE)
-        json <- gsub('}}',replacement=']}]',x=opening,fixed=TRUE)
+        json <- gsub('}}',replacement='}]}',x=opening,fixed=TRUE)
         cat(json,file=file.path(oname,"rois.json"))
         raw <- jsonlite::toJSON(results[[i]],auto_unbox=TRUE)
         opening <- gsub('"results":{',replacement='"results":[{',x=raw,fixed=TRUE)
@@ -43,23 +43,23 @@ parseROI <- function(f){
     list(
         image_width = as.numeric(f$intGrainWidth),
         image_height = as.numeric(f$intGrainHeight),
-        regions = list(
-            vertices = parseVertices(f$roiRegionOfInterest),
-            shift = c(0,0)
-        )
+        regions = parseVertices(f$roiRegionOfInterest)
     )
 }
 
 parseVertices <- function(roi){
-    v1 <- strsplit(roi,split=";")[[1]]
-    v2 <- unlist(strsplit(v1,split=","))
-    v3 <- unlist(strsplit(v2,split="true"))
-    v4 <- unlist(strsplit(v3,split="#"))
-    roi <- as.numeric(v4)
-    nr <- length(roi)
-    mat <- cbind(roi[seq(from=1,to=nr-1,by=2)],
-                 roi[seq(from=2,to=nr,by=2)])
-    out <- asplit(mat,1)
+    nparts <- lengths(regmatches(roi, gregexpr("#", roi)))
+    parts <- strsplit(roi,split="#")[[1]]
+    out <- list()
+    for (i in 1:nparts){
+        part <- gsub("true;","",parts[i])
+        v1 <- unlist(strsplit(part,split=";"))
+        v2 <- as.numeric(unlist(strsplit(v1,split=",")))
+        nr <- length(v2)
+        mat <- cbind(v2[seq(from=1,to=nr-1,by=2)],
+                     v2[seq(from=2,to=nr,by=2)])
+        out[[i]] <- list(vertices=asplit(mat,1), shift=c(0,0))
+    }
     out
 }
     
@@ -114,9 +114,6 @@ tif2jpeg <- function(idir,odir){
         itrans <- file.path(igrain,"Stack.tif")
         otrans <- file.path(ograin,"Stack.jpg")
         system(paste0("convert -set colorspace Gray -quality 50 ",itrans," ",otrans))
-        irefl <- file.path(igrain,"Refl.tif")
-        orefl <- file.path(ograin,"ReflStack.jpg")
-        system(paste0("convert -set colorspace Gray  -quality 50 ",irefl," ",orefl))
         iflat <- file.path(igrain,"ReflStackFlat.tif")
         oflat <- file.path(ograin,"ReflStackFlat.jpg")
         system(paste0("convert -set colorspace Gray  -quality 50 ",iflat," ",oflat))
@@ -129,7 +126,7 @@ FT2GaH <- function(idir,odir,xml){
     tif2jpeg(idir=idir,odir=odir)
 }
 
-if (FALSE) { # example:
+if (TRUE) { # example:
     FT2GaH(idir="~/Documents/FTrawData/20HL-06-FT",
            odir="~/Documents/FTrawData/20HL-06-GaH",xml="20HL-06.xml")
 }
