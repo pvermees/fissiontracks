@@ -12,7 +12,7 @@ semi-track length distributions and vice versa.
 
 Binomial peak fitting of EDM data from multiple radiations.
 
-3. **geochron@home**
+3. **[geochron@home](https://github.com/pvermees/fissiontracks/tree/master/geochron@home)**
 
 A tool to count fission tracks in **R**, and to prepare imagery for
 uploading to the eponymous web application.

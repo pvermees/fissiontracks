@@ -1,6 +1,4 @@
-rm(list=ls())
-
-xml2json <- function(fname,odir,sample="mysample",project="myproject"){
+xml2json <- function(fname,odir,user="admin",sample="mysample"){
     
     rois <- list()
     counts <- list()
@@ -20,7 +18,7 @@ xml2json <- function(fname,odir,sample="mysample",project="myproject"){
         g <- XMLgrains[[i]]
         f <- g$Fields
         rois[[i]] <- parseROI(f)
-        results[[i]] <- grain2grain(g,sample,project)
+        results[[i]] <- grain2grain(g,user=user,sample=sample,index=i)
     }
 
     for (i in seq_along(rois)){
@@ -32,11 +30,10 @@ xml2json <- function(fname,odir,sample="mysample",project="myproject"){
         opening <- gsub('"regions":{',replacement='"regions":[{',x=raw,fixed=TRUE)
         json <- gsub('}}',replacement='}]}',x=opening,fixed=TRUE)
         cat(json,file=file.path(oname,"rois.json"))
-        raw <- jsonlite::toJSON(results[[i]],auto_unbox=TRUE)
-        opening <- gsub('"results":{',replacement='"results":[{',x=raw,fixed=TRUE)
-        json <- gsub(']]',replacement=']}],"area_pixels"',x=opening,fixed=TRUE)
-        cat(json,file=file.path(oname,"results.json"))
     }
+    json <- jsonlite::toJSON(results,auto_unbox=TRUE)
+    cat(json,file=file.path(odir,"results.json"))
+
 }
 
 parseROI <- function(f){
@@ -63,44 +60,25 @@ parseVertices <- function(roi){
     out
 }
     
-grain2grain  <- function(g,sample,project){
+grain2grain  <- function(g,user,sample,index){
     stagexyz <- strsplit(g$Fields$locGrainLocation,",")[[1]]
     list(
-        grain = 0,
-        sample = 0,
-        sample_name = sample,
-        project_name = project,
-        results = list(
-            ft_type = "S",
-            result = length(g$Tracks),
-            create_date = date(),
-            worker = list(id=0),
-            latlngs = parseTracks(g$Tracks),
-            area_pixels = 0798323.5,
-            area_mm2 = 0.006581889861039999,
-            id = 0,
-            index = 0,
-            image_width = as.numeric(g$Fields$intGrainWidth),
-            image_height = as.numeric(g$Fields$intGrainHeight),
-            scale_x = 9.079999999999999e-08,
-            scale_y = 9.079999999999999e-08,
-            stage_x = as.numeric(stagexyz[2]),
-            stage_y = as.numeric(stagexyz[3]),
-            mica_stage_x = NULL,
-            mica_stage_y = NULL,
-            shift_x = 0,
-            shift_y = 0
-        )
+        sample = sample,
+        index = index,
+        user = user,
+        date = date(),
+        ft_type = "S",
+        points = parseTracks(g$Tracks)
     )
 }
 
 parseTracks <- function(tracks){
     nt <- length(tracks)
-    mat <- matrix(0,nt,2)
+    out <- list()
     for (i in seq_along(tracks)){
-        mat[i,] <- as.numeric(strsplit(tracks[[i]]$Fields$pntCenter,",")[[1]])
+        xy <- as.numeric(strsplit(tracks[[i]]$Fields$pntCenter,",")[[1]])
+        out[[i]] <- list(x_pixels=xy[1],y_pixels=xy[2])
     }
-    out <- asplit(mat,1)
     out
 }
 
@@ -120,13 +98,7 @@ tif2jpeg <- function(idir,odir){
     }
 }
 
-FT2GaH <- function(idir,odir,xml){
-    xml2json(fname=file.path(idir,xml),sample="mysample",
-             project="myproject",odir=odir)
+FT2GaH <- function(idir,odir,xml,user="admin",sample){
+    xml2json(fname=file.path(idir,xml),odir=odir,user=user,sample=sample)
     tif2jpeg(idir=idir,odir=odir)
-}
-
-if (TRUE) { # example:
-    FT2GaH(idir="~/Documents/FTrawData/20HL-06-FT",
-           odir="~/Documents/FTrawData/20HL-06-GaH",xml="20HL-06.xml")
 }
