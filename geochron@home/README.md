@@ -42,3 +42,16 @@ where
 located inside the input folder;
 
 4. `sample` expects the sample name.
+
+On Windows computers, you may need to provide the full path to
+ImageMagick's `convert` function via the optional `IMpath`
+argument. For example:
+
+```
+source("/path/to/FT2GaH.R")
+FT2GaH(idir="/path/to/FT/data",odir="/path/to/GaH/data",
+       xml="results.xml",sample="samplename",
+       IMpath="\"C:\\Program Files\\ImageMagick\"")
+```
+
+Note the necessary `\` escape characters.

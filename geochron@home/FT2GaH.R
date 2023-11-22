@@ -82,7 +82,7 @@ parseTracks <- function(tracks){
     out
 }
 
-tif2jpeg <- function(idir,odir){
+tif2jpeg <- function(idir,odir,IMpath=NULL){
     grains <- list.files(idir,pattern="Grain*")
     for (grain in grains){
         message(grain)
@@ -91,14 +91,16 @@ tif2jpeg <- function(idir,odir){
         if (!dir.exists(ograin)) dir.create(ograin)
         itrans <- file.path(igrain,"Stack.tif")
         otrans <- file.path(ograin,"Stack.jpg")
-        system(paste0("convert -set colorspace Gray -quality 50 ",itrans," ",otrans))
+        
+        convert <- ifelse(is.null(IMpath),"convert",file.path(IMpath,"convert"))
+        system(paste0(convert," -set colorspace Gray -quality 50 ",itrans," ",otrans))
         iflat <- file.path(igrain,"ReflStackFlat.tif")
         oflat <- file.path(ograin,"ReflStackFlat.jpg")
-        system(paste0("convert -set colorspace Gray  -quality 50 ",iflat," ",oflat))
+        system(paste0(convert," -set colorspace Gray  -quality 50 ",iflat," ",oflat))
     }
 }
 
-FT2GaH <- function(idir,odir,xml,user="admin",sample){
+FT2GaH <- function(idir,odir,xml,user="admin",sample,IMpath=NULL){
     xml2json(fname=file.path(idir,xml),odir=odir,user=user,sample=sample)
-    tif2jpeg(idir=idir,odir=odir)
+    tif2jpeg(idir=idir,odir=odir,IMpath=IMpath)
 }
