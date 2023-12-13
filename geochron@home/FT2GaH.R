@@ -17,7 +17,10 @@ xml2json <- function(fname,odir,user="admin",sample="mysample"){
     for (i in seq_along(XMLgrains)){
         g <- XMLgrains[[i]]
         f <- g$Fields
-        rois[[i]] <- parseROI(f)
+        rois[[i]] <- parseROI(f,debug=(i==12))
+        if (is.null(rois[[i]]$regions)){
+            warning('grain ',i,' does not have a region of interest')
+        }
         results[[i]] <- grain2grain(g,user=user,sample=sample,index=i)
     }
 
@@ -36,7 +39,7 @@ xml2json <- function(fname,odir,user="admin",sample="mysample"){
 
 }
 
-parseROI <- function(f){
+parseROI <- function(f,debug=FALSE){
     list(
         image_width = as.numeric(f$intGrainWidth),
         image_height = as.numeric(f$intGrainHeight),
@@ -45,9 +48,10 @@ parseROI <- function(f){
 }
 
 parseVertices <- function(roi){
+    if (is.null(roi)) return(NULL)
+    out <- list()
     nparts <- lengths(regmatches(roi, gregexpr("#", roi)))
     parts <- strsplit(roi,split="#")[[1]]
-    out <- list()
     for (i in 1:nparts){
         part <- gsub("true;","",parts[i])
         v1 <- unlist(strsplit(part,split=";"))
