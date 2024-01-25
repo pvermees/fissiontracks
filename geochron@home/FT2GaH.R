@@ -17,17 +17,18 @@ xml2json <- function(fname,odir,user="admin",sample="mysample"){
     for (i in seq_along(XMLgrains)){
         g <- XMLgrains[[i]]
         f <- g$Fields
+        gname <- f$strGrainName
         rois[[i]] <- parseROI(f,debug=(i==12))
         if (is.null(rois[[i]]$regions)){
-            warning('grain ',i,' does not have a region of interest')
+            warning('grain ',gname,' does not have a region of interest')
         }
-        results[[i]] <- grain2grain(g,user=user,sample=sample,index=i)
+        gnum <- as.numeric(gsub("\\D", "", gname))
+        results[[i]] <- grain2grain(g,user=user,sample=sample,index=gnum)
     }
 
     for (i in seq_along(rois)){
-        padding <- ifelse(i<10,"0","")
-        dname <- paste0("Grain",padding,i)
-        oname <- file.path(odir,dname)
+        gname <- XMLgrains[[i]]$Fields$strGrainName
+        oname <- file.path(odir,gname)
         if (!dir.exists(oname)) dir.create(oname)
         raw <- jsonlite::toJSON(rois[[i]],auto_unbox=TRUE)
         opening <- gsub('"regions":{',replacement='"regions":[{',x=raw,fixed=TRUE)
@@ -79,9 +80,36 @@ grain2grain  <- function(g,user,sample,index){
 parseTracks <- function(tracks){
     nt <- length(tracks)
     out <- list()
+    j <- 0
     for (i in seq_along(tracks)){
-        xy <- as.numeric(strsplit(tracks[[i]]$Fields$pntCenter,",")[[1]])
-        out[[i]] <- list(x_pixels=xy[1],y_pixels=xy[2])
+        fields <- tracks[[i]]$Fields
+        nt <- fields$intMultiple
+        xy <- as.numeric(strsplit(fields$pntCenter,",")[[1]])
+        j <- j+1
+        out[[j]] <- list(x_pixels=xy[1],y_pixels=xy[2])
+        if (nt>1){
+            j <- j+1
+            out[[j]] <- list(x_pixels=xy[1],y_pixels=xy[2]+1)
+        }
+        if (nt>2){
+            j <- j+1
+            out[[j]] <- list(x_pixels=xy[1]+1,y_pixels=xy[2])
+        }
+        if (nt>3){
+            j <- j+1
+            out[[j]] <- list(x_pixels=xy[1],y_pixels=xy[2]-1)
+        }
+        if (nt>4){
+            j <- j+1
+            out[[j]] <- list(x_pixels=xy[1]-1,y_pixels=xy[2])
+        }
+        if (nt>5){
+            for (ii in 6:nt){
+                j <- j+1
+                xyj <- jitter(xy)
+                out[[j]] <- list(x_pixels=xyj[1],y_pixels=xyj[2])
+            }
+        }
     }
     out
 }
@@ -105,6 +133,7 @@ tif2jpeg <- function(idir,odir,IMpath=NULL){
 }
 
 FT2GaH <- function(idir,odir,xml,user="admin",sample,IMpath=NULL){
+    if (!dir.exists(odir)) dir.create(odir)
     xml2json(fname=file.path(idir,xml),odir=odir,user=user,sample=sample)
     tif2jpeg(idir=idir,odir=odir,IMpath=IMpath)
 }
