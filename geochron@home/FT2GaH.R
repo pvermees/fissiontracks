@@ -89,19 +89,19 @@ parseTracks <- function(tracks){
         out[[j]] <- list(x_pixels=xy[1],y_pixels=xy[2])
         if (nt>1){
             j <- j+1
-            out[[j]] <- list(x_pixels=xy[1],y_pixels=xy[2]+1)
+            out[[j]] <- list(x_pixels=xy[1]+1,y_pixels=xy[2]+1)
         }
         if (nt>2){
             j <- j+1
-            out[[j]] <- list(x_pixels=xy[1]+1,y_pixels=xy[2])
+            out[[j]] <- list(x_pixels=xy[1]+1,y_pixels=xy[2]-1)
         }
         if (nt>3){
             j <- j+1
-            out[[j]] <- list(x_pixels=xy[1],y_pixels=xy[2]-1)
+            out[[j]] <- list(x_pixels=xy[1]-1,y_pixels=xy[2]-1)
         }
         if (nt>4){
             j <- j+1
-            out[[j]] <- list(x_pixels=xy[1]-1,y_pixels=xy[2])
+            out[[j]] <- list(x_pixels=xy[1]-1,y_pixels=xy[2]+1)
         }
         if (nt>5){
             for (ii in 6:nt){
