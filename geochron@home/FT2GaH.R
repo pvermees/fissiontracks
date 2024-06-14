@@ -73,42 +73,62 @@ grain2grain  <- function(g,user,sample,index){
         user = user,
         date = date(),
         ft_type = "S",
-        points = parseTracks(g$Tracks)
+        points = parseTracks(g$Tracks),
+        lines = parseLengths(g$Fields$tvlTINTs3d)
     )
 }
 
 parseTracks <- function(tracks){
-    nt <- length(tracks)
     out <- list()
+    if (is.null(tracks)) return(out)
+    else nt <- length(tracks)
     j <- 0
     for (i in seq_along(tracks)){
         fields <- tracks[[i]]$Fields
-        nt <- fields$intMultiple
-        xy <- as.numeric(strsplit(fields$pntCenter,",")[[1]])
-        j <- j+1
-        out[[j]] <- list(x_pixels=xy[1],y_pixels=xy[2])
-        if (nt>1){
+        if (isa(fields,'list')){
+            nt <- fields$intMultiple
+            xy <- as.numeric(strsplit(fields$pntCenter,",")[[1]])
             j <- j+1
-            out[[j]] <- list(x_pixels=xy[1],y_pixels=xy[2]+1)
-        }
-        if (nt>2){
-            j <- j+1
-            out[[j]] <- list(x_pixels=xy[1]+1,y_pixels=xy[2])
-        }
-        if (nt>3){
-            j <- j+1
-            out[[j]] <- list(x_pixels=xy[1],y_pixels=xy[2]-1)
-        }
-        if (nt>4){
-            j <- j+1
-            out[[j]] <- list(x_pixels=xy[1]-1,y_pixels=xy[2])
-        }
-        if (nt>5){
-            for (ii in 6:nt){
+            out[[j]] <- list(x_pixels=xy[1],y_pixels=xy[2])
+            if (nt>1){
                 j <- j+1
-                xyj <- jitter(xy)
-                out[[j]] <- list(x_pixels=xyj[1],y_pixels=xyj[2])
+                out[[j]] <- list(x_pixels=xy[1]+1,y_pixels=xy[2]+1)
             }
+            if (nt>2){
+                j <- j+1
+                out[[j]] <- list(x_pixels=xy[1]+1,y_pixels=xy[2]-1)
+            }
+            if (nt>3){
+                j <- j+1
+                out[[j]] <- list(x_pixels=xy[1]-1,y_pixels=xy[2]-1)
+            }
+            if (nt>4){
+                j <- j+1
+                out[[j]] <- list(x_pixels=xy[1]-1,y_pixels=xy[2]+1)
+            }
+            if (nt>5){
+                for (ii in 6:nt){
+                    j <- j+1
+                    xyj <- jitter(xy)
+                    out[[j]] <- list(x_pixels=xyj[1],y_pixels=xyj[2])
+                }
+            }
+        }
+    }
+    out
+}
+
+parseLengths <- function(lengths){
+    if (is.null(lengths)){
+        out <- NULL
+    } else {
+        string <- substr(lengths,1,nchar(lengths)-2)
+        blocks <- strsplit(string,';0:')[[1]]
+        out <- list()
+        for (i in seq_along(blocks)){
+            endpoints <- strsplit(blocks[i],split=';')[[1]]
+            out[[i]] <- list(from=as.numeric(strsplit(endpoints[1],split=',')[[1]]),
+                             to=as.numeric(strsplit(endpoints[2],split=',')[[1]]))
         }
     }
     out
@@ -123,7 +143,6 @@ tif2jpeg <- function(idir,odir,IMpath=NULL){
         if (!dir.exists(ograin)) dir.create(ograin)
         itrans <- file.path(igrain,"Stack.tif")
         otrans <- file.path(ograin,"Stack.jpg")
-        
         convert <- ifelse(is.null(IMpath),"convert",file.path(IMpath,"convert"))
         system(paste0(convert," -set colorspace Gray -quality 50 ",itrans," ",otrans))
         iflat <- file.path(igrain,"ReflStackFlat.tif")
@@ -135,5 +154,5 @@ tif2jpeg <- function(idir,odir,IMpath=NULL){
 FT2GaH <- function(idir,odir,xml,user="admin",sample,IMpath=NULL){
     if (!dir.exists(odir)) dir.create(odir)
     xml2json(fname=file.path(idir,xml),odir=odir,user=user,sample=sample)
-    tif2jpeg(idir=idir,odir=odir,IMpath=IMpath)
+    #tif2jpeg(idir=idir,odir=odir,IMpath=IMpath)
 }
