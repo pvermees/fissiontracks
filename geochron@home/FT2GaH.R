@@ -119,16 +119,15 @@ parseTracks <- function(tracks){
 }
 
 parseLengths <- function(lengths){
-    if (is.null(lengths)){
-        out <- NULL
-    } else {
+    out <- list()
+    if (!is.null(lengths)){
         string <- substr(lengths,1,nchar(lengths)-2)
-        blocks <- strsplit(string,';0:')[[1]]
-        out <- list()
+        blocks <- strsplit(string,':')[[1]]
         for (i in seq_along(blocks)){
-            endpoints <- strsplit(blocks[i],split=';')[[1]]
-            out[[i]] <- list(from=as.numeric(strsplit(endpoints[1],split=',')[[1]]),
-                             to=as.numeric(strsplit(endpoints[2],split=',')[[1]]))
+            midpoints <- strsplit(blocks[i],split=';')[[1]]
+            from = as.numeric(strsplit(midpoints[1],split=',')[[1]])
+            to = as.numeric(strsplit(midpoints[2],split=',')[[1]])
+            out[[i]] <- c(from,to)
         }
     }
     out
@@ -151,8 +150,8 @@ tif2jpeg <- function(idir,odir,IMpath=NULL){
     }
 }
 
-FT2GaH <- function(idir,odir,xml,user="admin",sample,IMpath=NULL){
+FT2GaH <- function(idir,odir,xml,user="admin",sample,IMpath=NULL,tif2jpg=TRUE){
     if (!dir.exists(odir)) dir.create(odir)
     xml2json(fname=file.path(idir,xml),odir=odir,user=user,sample=sample)
-    #tif2jpeg(idir=idir,odir=odir,IMpath=IMpath)
+    if (tif2jpg) tif2jpeg(idir=idir,odir=odir,IMpath=IMpath)
 }
