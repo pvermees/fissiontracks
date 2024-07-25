@@ -1,4 +1,4 @@
-xml2json <- function(fname,odir,user="admin",sample="mysample"){
+xml2json <- function(fname,odir,user,analyst,sample){
     
     rois <- list()
     counts <- list()
@@ -25,7 +25,8 @@ xml2json <- function(fname,odir,user="admin",sample="mysample"){
             warning('grain ',gname,' does not have a region of interest')
         }
         gnum <- as.numeric(gsub("\\D", "", gname))
-        results[[i]] <- grain2grain(g,user=user,sample=sample,index=gnum,scaleZ=scaleZ)
+        results[[i]] <- grain2grain(g,user=user,analyst=analyst,
+                                    sample=sample,index=gnum,scaleZ=scaleZ)
     }
 
     for (i in seq_along(rois)){
@@ -67,17 +68,17 @@ parseVertices <- function(roi){
     out
 }
     
-grain2grain  <- function(g,user,sample,index,scaleZ){
+grain2grain  <- function(g,user,analyst,sample,index,scaleZ){
     stagexyz <- strsplit(g$Fields$locGrainLocation,",")[[1]]
     list(
         sample = sample,
         index = index,
         user = user,
+        analyst = analyst,
         date = date(),
         ft_type = "S",
-        scaleZ = scaleZ,
         points = parseTracks(g$Tracks),
-        lines = parseLengths(g$Fields$tvlTINTs3d)
+        lines = parseLengths(g$Fields$tvlTINTs3d,scaleZ=scaleZ)
     )
 }
 
@@ -121,16 +122,16 @@ parseTracks <- function(tracks){
     out
 }
 
-parseLengths <- function(lengths){
+parseLengths <- function(lengths,scaleZ=1){
     out <- list()
     if (!is.null(lengths)){
         string <- substr(lengths,1,nchar(lengths)-2)
         blocks <- strsplit(string,':')[[1]]
         for (i in seq_along(blocks)){
             midpoints <- strsplit(blocks[i],split=';')[[1]]
-            from = as.numeric(strsplit(midpoints[1],split=',')[[1]])
-            to = as.numeric(strsplit(midpoints[2],split=',')[[1]])
-            out[[i]] <- c(from,to)
+            from <- as.numeric(strsplit(midpoints[1],split=',')[[1]])/c(1,1,scaleZ)
+            to <- as.numeric(strsplit(midpoints[2],split=',')[[1]])/c(1,1,scaleZ)
+            out[[i]] <- round(c(from,to))
         }
     }
     out
@@ -153,8 +154,8 @@ tif2jpeg <- function(idir,odir,IMpath=NULL){
     }
 }
 
-FT2GaH <- function(idir,odir,xml,user="admin",sample,IMpath=NULL,tif2jpg=TRUE){
+FT2GaH <- function(idir,odir,xml,user="admin",analyst=user,sample,IMpath=NULL,tif2jpg=TRUE){
     if (!dir.exists(odir)) dir.create(odir)
-    xml2json(fname=file.path(idir,xml),odir=odir,user=user,sample=sample)
+    xml2json(fname=file.path(idir,xml),odir=odir,user=user,analyst=analyst,sample=sample)
     if (tif2jpg) tif2jpeg(idir=idir,odir=odir,IMpath=IMpath)
 }
