@@ -9,6 +9,8 @@ xml2json <- function(fname,odir,user="admin",sample="mysample"){
     XMLlist <- XML::xmlToList(xml)
     message("Converting the list to JSON.")
 
+    scaleZ <- as.numeric(XMLlist$AllData$dblTransStepSize)
+
     ng <- length(XMLlist$Grains)
     XMLgrains <- XMLlist$Grains
 
@@ -23,7 +25,7 @@ xml2json <- function(fname,odir,user="admin",sample="mysample"){
             warning('grain ',gname,' does not have a region of interest')
         }
         gnum <- as.numeric(gsub("\\D", "", gname))
-        results[[i]] <- grain2grain(g,user=user,sample=sample,index=gnum)
+        results[[i]] <- grain2grain(g,user=user,sample=sample,index=gnum,scaleZ=scaleZ)
     }
 
     for (i in seq_along(rois)){
@@ -65,7 +67,7 @@ parseVertices <- function(roi){
     out
 }
     
-grain2grain  <- function(g,user,sample,index){
+grain2grain  <- function(g,user,sample,index,scaleZ){
     stagexyz <- strsplit(g$Fields$locGrainLocation,",")[[1]]
     list(
         sample = sample,
@@ -73,6 +75,7 @@ grain2grain  <- function(g,user,sample,index){
         user = user,
         date = date(),
         ft_type = "S",
+        scaleZ = scaleZ,
         points = parseTracks(g$Tracks),
         lines = parseLengths(g$Fields$tvlTINTs3d)
     )
