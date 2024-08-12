@@ -149,7 +149,12 @@ tif2jpeg <- function(idir,odir,IMpath=NULL){
         convert <- ifelse(is.null(IMpath),"convert",file.path(IMpath,"convert"))
         system(paste0(convert," -set colorspace Gray -quality 50 ",itrans," ",otrans))
         iflat <- file.path(igrain,"ReflStackFlat.tif")
-        oflat <- file.path(ograin,"ReflStackFlat.jpg")
+        if (file.exists(iflat)){
+            oflat <- file.path(ograin,"ReflStackFlat.jpg")
+        } else {
+            iflat <- file.path(igrain,"ReflStack.tif[0]")
+            oflat <- file.path(ograin,"ReflStackFlat.jpg")
+        }
         system(paste0(convert," -set colorspace Gray  -quality 50 ",iflat," ",oflat))
     }
 }
