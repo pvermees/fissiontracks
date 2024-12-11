@@ -89,9 +89,17 @@ parseTracks <- function(tracks){
     j <- 0
     for (i in seq_along(tracks)){
         fields <- tracks[[i]]$Fields
+        proceed <- TRUE
         if (isa(fields,'list')){
             nt <- fields$intMultiple
             xy <- as.numeric(strsplit(fields$pntCenter,",")[[1]])
+        } else {
+            fieldsvec <- strsplit(fields,";")[[1]]
+            nt <- as.numeric(fieldsvec[3])
+            xy <- as.numeric(strsplit(fieldsvec,",")[[1]])
+            proceed <- !is.na(xy[1])
+        }
+        if (proceed){
             j <- j+1
             out[[j]] <- list(x_pixels=xy[1],y_pixels=xy[2])
             if (nt>1){
