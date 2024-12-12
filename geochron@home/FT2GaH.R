@@ -17,19 +17,16 @@ xml2json <- function(fname,odir,user,analyst,sample){
     rois <- list()
     results <- list()
     for (i in seq_along(XMLgrains)){
+        # 1. track counts and lengths
         g <- XMLgrains[[i]]
         f <- g$Fields
         gname <- f$strGrainName
         rois[[i]] <- parseROI(f,debug=(i==12))
-        if (is.null(rois[[i]]$regions)){
-            warning('grain ',gname,' does not have a region of interest')
-        }
         gnum <- as.numeric(gsub("\\D", "", gname))
         results[[i]] <- grain2grain(g,user=user,analyst=analyst,
                                     sample=sample,index=gnum,scaleZ=scaleZ)
-    }
-
-    for (i in seq_along(rois)){
+        # 2. rois
+        results[[i]]$roi <- rois[[i]]
         gname <- XMLgrains[[i]]$Fields$strGrainName
         oname <- file.path(odir,gname)
         if (!dir.exists(oname)) dir.create(oname)
@@ -38,17 +35,26 @@ xml2json <- function(fname,odir,user,analyst,sample){
         json <- gsub('}}',replacement='}]}',x=opening,fixed=TRUE)
         cat(json,file=file.path(oname,"rois.json"))
     }
+
     json <- jsonlite::toJSON(results,auto_unbox=TRUE)
     cat(json,file=file.path(odir,"results.json"))
 
 }
 
 parseROI <- function(f,debug=FALSE){
-    list(
+    out <- list(
         image_width = as.numeric(f$intGrainWidth),
         image_height = as.numeric(f$intGrainHeight),
         regions = parseVertices(f$roiRegionOfInterest)
     )
+    if (is.null(out$regions)){
+        out$regions <- list(vertices=list(c(0,0),
+                                          c(out$image_width,0),
+                                          c(out$image_width,out$image_height),
+                                          c(0,out$image_height)),
+                            shift=c(0,0))
+    }
+    out
 }
 
 parseVertices <- function(roi){
