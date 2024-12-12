@@ -88,42 +88,44 @@ parseTracks <- function(tracks){
     else nt <- length(tracks)
     j <- 0
     for (i in seq_along(tracks)){
+        ai <- "Outline" %in% names(tracks[[i]])
         fields <- tracks[[i]]$Fields
-        proceed <- TRUE
         if (isa(fields,'list')){
             nt <- fields$intMultiple
             xy <- as.numeric(strsplit(fields$pntCenter,",")[[1]])
         } else {
             fieldsvec <- strsplit(fields,";")[[1]]
-            nt <- as.numeric(fieldsvec[3])
-            xy <- as.numeric(strsplit(fieldsvec,",")[[1]])
-            proceed <- !is.na(xy[1])
+            if (ai){
+                nt <- as.numeric(fieldsvec[4])
+                xy <- as.numeric(strsplit(fieldsvec[10],"[:,]")[[1]][2:3])
+            } else {
+                nt <- as.numeric(fieldsvec[3])
+                xy <- as.numeric(strsplit(fieldsvec[1],",")[[1]])
+            }
         }
-        if (proceed){
+        j <- j+1
+        out[[j]] <- list(x_pixels=xy[1],y_pixels=xy[2])
+        if (nt>1){
             j <- j+1
-            out[[j]] <- list(x_pixels=xy[1],y_pixels=xy[2])
-            if (nt>1){
+            out[[j]] <- list(x_pixels=xy[1]+1,y_pixels=xy[2]+1)
+        }
+        if (nt>2){
+            j <- j+1
+            out[[j]] <- list(x_pixels=xy[1]+1,y_pixels=xy[2]-1)
+        }
+        if (nt>3){
+            j <- j+1
+            out[[j]] <- list(x_pixels=xy[1]-1,y_pixels=xy[2]-1)
+        }
+        if (nt>4){
+            j <- j+1
+            out[[j]] <- list(x_pixels=xy[1]-1,y_pixels=xy[2]+1)
+        }
+        if (nt>5){
+            for (ii in 6:nt){
                 j <- j+1
-                out[[j]] <- list(x_pixels=xy[1]+1,y_pixels=xy[2]+1)
-            }
-            if (nt>2){
-                j <- j+1
-                out[[j]] <- list(x_pixels=xy[1]+1,y_pixels=xy[2]-1)
-            }
-            if (nt>3){
-                j <- j+1
-                out[[j]] <- list(x_pixels=xy[1]-1,y_pixels=xy[2]-1)
-            }
-            if (nt>4){
-                j <- j+1
-                out[[j]] <- list(x_pixels=xy[1]-1,y_pixels=xy[2]+1)
-            }
-            if (nt>5){
-                for (ii in 6:nt){
-                    j <- j+1
-                    xyj <- jitter(xy)
-                    out[[j]] <- list(x_pixels=xyj[1],y_pixels=xyj[2])
-                }
+                xyj <- jitter(xy)
+                out[[j]] <- list(x_pixels=xyj[1],y_pixels=xyj[2])
             }
         }
     }
