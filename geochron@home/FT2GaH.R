@@ -26,13 +26,16 @@ xml2json <- function(fname,odir,user,analyst,sample){
         results[[i]] <- grain2grain(g,user=user,analyst=analyst,
                                     sample=sample,index=gnum,scaleZ=scaleZ)
         # 2. rois
+        regions <- rois[[i]]$regions
+        if (!is.null(names(regions))){ # turn vector into list
+            rois[[i]]$regions <- list()
+            rois[[i]]$regions[[1]] <- regions
+        }
         results[[i]]$roi <- rois[[i]]
         gname <- XMLgrains[[i]]$Fields$strGrainName
         oname <- file.path(odir,gname)
         if (!dir.exists(oname)) dir.create(oname)
-        raw <- jsonlite::toJSON(rois[[i]],auto_unbox=TRUE)
-        opening <- gsub('"regions":{',replacement='"regions":[{',x=raw,fixed=TRUE)
-        json <- gsub('}}',replacement='}]}',x=opening,fixed=TRUE)
+        json <- jsonlite::toJSON(rois[[i]],auto_unbox=TRUE)
         cat(json,file=file.path(oname,"rois.json"))
     }
 
