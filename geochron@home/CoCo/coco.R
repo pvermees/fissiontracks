@@ -46,7 +46,7 @@ coco <- function(microscope_coordinates,tie_points){
     out[,'Z'] <- predict(fit, newdata=data.frame(X=xyout[,1],Y=xyout[,2]))
     route <- as.numeric(TSP::solve_TSP(TSP::TSP(dist(xyout))))
     ofname <- paste0(tools::file_path_sans_ext(microscope_coordinates),'-out.csv')
-    write.csv(out[route,],file=ofname)
+    write.csv(out[route,],file=ofname,row.names=FALSE,quote=FALSE)
 }
 
 coco('xy.csv','tie_points.csv')
