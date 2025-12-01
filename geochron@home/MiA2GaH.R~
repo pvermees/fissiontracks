@@ -1,0 +1,7 @@
+MiA2GaH <- function(idir,odir,nrefl,ntrans,IMpath=NULL){
+    grains <- list.files(idir,pattern="Grain*")
+    for (grain in grains){
+        message(grain)
+        images <- list.files(grain)
+    }
+}
