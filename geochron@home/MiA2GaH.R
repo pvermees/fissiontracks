@@ -8,23 +8,21 @@ MiA2GaH <- function(idir,odir,IMpath=NULL){
         message(grain)
         igrain <- paste0(idir,grain)
         images <- list.files(igrain,pattern="\\.png$")
-        if (i<10){
-            gname <- paste0("Grain0",i)
-        } else {
-            gname <- paste0("Grain",i)
-        }
+        if (i<10) gname <- paste0("Grain0",i)
+        else gname <- paste0("Grain",i)
         gdir <- paste0(odir,gname)
         if (!dir.exists(gdir)) dir.create(gdir)
         for (j in seq_along(images)){
             ifname <- file.path(paste0(idir,"'",grain,"'"),images[j])
-            if (j<10){
-                stackname <- paste0("Stack-0",j)
-            } else {
-                stackname <- paste0("Stack-",j)
-            }
+            if (j<10) stackname <- paste0("Stack-0",j)
+            else stackname <- paste0("Stack-",j)
             ofname <- file.path(gdir,paste0(stackname,".jpg"))
-            cmd <- paste0(convert," -set colorspace Gray -quality 50 ",ifname," ",ofname)
-            system(cmd)
+            cmd1 <- paste0(convert," -set colorspace Gray -quality 50 ",ifname," ",ofname)
+            ixmlname <- file.path(paste0(idir,"'",grain,"'"),paste0(images[j],"_metadata.xml"))
+            oxmlname <- file.path(gdir,paste0(stackname,".jpg_metadata.xml"))
+            cmd2 <- paste0("cp ",ixmlname," ",oxmlname)
+            system(cmd1)
+            system(cmd2)
         }
         foo <- 1
     }
