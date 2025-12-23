@@ -25,6 +25,7 @@ MiA2GaH <- function(idir,odir,IMpath=NULL){
     y <- poi[,"y::y"]
     sortedgrains <- mixedsort(grains)
     for (i in seq_along(sortedgrains)){
+        print(i)
         grain <- grains[i]
         igrain <- file.path(idir,grain)
         images <- list.files(igrain,pattern="\\.png$")
@@ -37,18 +38,13 @@ MiA2GaH <- function(idir,odir,IMpath=NULL){
             if (j<10) stackname <- paste0("Stack-0",j)
             else stackname <- paste0("Stack-",j)
             ofname <- file.path(gdir,paste0(stackname,".jpg"))
-            cmd1 <- paste0(convert," -set colorspace Gray -quality 50 ",ifname," ",ofname)
-            ixmlname <- file.path(idir,paste0("'",grain,"'"),paste0(images[j],"_metadata.xml"))
-            oxmlname <- file.path(gdir,paste0(stackname,".jpg_metadata.xml"))
-            cmd2 <- paste0("cp ",ixmlname," ",oxmlname)
-            system(cmd1)
-            system(cmd2)
+            cmd <- paste0(convert," -set colorspace Gray -quality 50 ",ifname," ",ofname)
+            system(cmd)
         }
         cat(get_json(x=x[i],y=y[i]),file=file.path(gdir,'rois.json'))
-        foo <- 1
     }
 }
 
-setwd("~/Documents/fissiontracks/geochron@home/AndyCarter/SEY809")
+setwd("~/Documents/fissiontracks/geochron@home/Navya_Veepuru/DEN71-Ind1835")
 
 MiA2GaH(idir="Outputs",odir="GaH")
